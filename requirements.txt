@@ -1,0 +1,16 @@
+colorama
+resolvelib
+PyYAML
+pycparser
+packaging
+MarkupSafe
+jinja2
+cffi
+cryptography
+ansible-core
+ansible
+fastapi
+redis
+psycopg2-binary
+python-multipart
+uvicorn

@@ -1,0 +1,6 @@
+secrets/
+.venv/
+__pycache__
+backend/static/images/
+backend/static/videos/
+backend/static/fonts/
