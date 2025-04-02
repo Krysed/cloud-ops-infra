@@ -1,4 +1,5 @@
-secrets/
+secrets/*
+!secrets/*.example
 .venv/
 __pycache__
 backend/static/images/

@@ -2,35 +2,41 @@ from fastapi import FastAPI, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from jinja2 import Environment, FileSystemLoader
+from pathlib import Path
 import redis
 import psycopg2
 import psycopg2.extras
 import json
 import os
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-db_json=os.path.join(BASE_DIR, "..", "secrets", "db_config.json")
+BASE_DIR = Path(__file__).parent
+db_json = os.getenv("DB_CONFIG_PATH", str(BASE_DIR.parent / "secrets" / "db_config.json"))
 
 with open(db_json, "r") as f:
     config = json.load(f)
 
 app = FastAPI()
-template_env = Environment(loader=FileSystemLoader("backend/template"))
-app.mount("/static", StaticFiles(directory="backend/static"), name="static")
+template_env = Environment(loader=FileSystemLoader(str(BASE_DIR / "template")))
+static_dir = str(BASE_DIR / "static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 redis_config = config["REDIS"]
+postgres_config = config["POSTGRES"]
+REDIS_HOST = os.getenv("REDIS_HOST", config["REDIS"]["host"])  
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", config["POSTGRES"]["host"])
+
 cache = redis.Redis(
-    host=redis_config["host"],
+    host=REDIS_HOST,
     port=redis_config["port"],
+    password=redis_config.get("password"),
     decode_responses=True
 )
 
-postgres_config = config["POSTGRES"]
 db_connection = psycopg2.connect(
+    host=POSTGRES_HOST,
     dbname=postgres_config["dbname"],
     user=postgres_config["user"],
     password=postgres_config["password"],
-    host=postgres_config["host"],
     port=postgres_config["port"],
     cursor_factory=psycopg2.extras.RealDictCursor
 )
