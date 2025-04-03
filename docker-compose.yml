@@ -1,32 +1,39 @@
 services:
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./backend/static:/var/www/static:ro
+      - ./backend/template:/var/www/template:ro
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
   backend:
     build:
       context: .
-      dockerfile: ./backend/Dockerfile
+      dockerfile: ./backend/Dockerfile #TODO: Change this later when decided on final requirements.txt for the app 
     volumes:
       - type: bind
         source: ./secrets/db_config.json
         target: /app/secrets/db_config.json
         read_only: true
-      - type: bind
-        source: ./backend/static
-        target: /app/static
-        read_only: true
-      - type: bind
-        source: ./backend/template
-        target: /app/template
-        read_only: true
     environment:
       - DB_CONFIG_PATH=/app/secrets/db_config.json
       - POSTGRES_HOST=postgres
       - REDIS_HOST=redis
-    ports:
-      - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - app_network
 
   postgres:
     build:
@@ -52,6 +59,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - app_network
 
   redis:
     build:
@@ -75,7 +84,12 @@ services:
       interval: 5s
       timeout: 3s
       retries: 3
-
+    networks:
+      - app_network
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  app_network:
+    driver: bridge
