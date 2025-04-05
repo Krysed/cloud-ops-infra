@@ -2,6 +2,6 @@ secrets/*
 !secrets/*.example
 .venv/
 __pycache__
-backend/static/images/
-backend/static/videos/
-backend/static/fonts/
+frontend/static/images/
+frontend/static/videos/
+frontend/static/fonts/

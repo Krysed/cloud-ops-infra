@@ -6,11 +6,9 @@ services:
     image: nginx:alpine
     ports:
       - "80:80"
-    volumes:
-      - ./backend/static:/var/www/static:ro
-      - ./backend/template:/var/www/template:ro
     depends_on:
       - backend
+      - frontend
     networks:
       - app_network
 
@@ -35,9 +33,16 @@ services:
     networks:
       - app_network
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    networks:
+      - app_network
+
   postgres:
     build:
-      context: ./db
+      context: ./postgres
       dockerfile: Dockerfile
     volumes:
       - ./secrets/db_config.json:/tmp/db_config.json:ro
