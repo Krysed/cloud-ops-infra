@@ -16,9 +16,12 @@ with open(db_json, "r") as f:
     config = json.load(f)
 
 app = FastAPI()
-template_env = Environment(loader=FileSystemLoader(str(BASE_DIR / "template")))
-static_dir = str(BASE_DIR / "static")
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+template_env = Environment(loader=FileSystemLoader(str(BASE_DIR.parent / "frontend" / "template")))
+static_dir = str(BASE_DIR.parent / "frontend" / "static")
+
+if Path(static_dir).exists():
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 redis_config = config["REDIS"]
 postgres_config = config["POSTGRES"]
@@ -42,36 +45,39 @@ db_connection = psycopg2.connect(
 )
 cursor = db_connection.cursor()
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=RedirectResponse)
 async def index():
-    """Serve the main HTML page."""
-    template = template_env.get_template("index.html")
-    return template.render()
+    """Redirect to frontend's index page"""
+    return "/"
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page():
-    with open(os.path.join(BASE_DIR, "template", "login.html")) as f:
+    with open(os.path.join(BASE_DIR.parent, "frontend", "template", "login.html")) as f:
         return HTMLResponse(content=f.read())
 
 @app.get("/register", response_class=HTMLResponse)
 async def register_page():
-    with open(os.path.join(BASE_DIR, "template", "register.html")) as f:
+    with open(os.path.join(BASE_DIR.parent, "frontend", "template", "register.html")) as f:
         return HTMLResponse(content=f.read())
 
 @app.get("/password-reset", response_class=HTMLResponse)
 async def password_reset_page():
-    with open(os.path.join(BASE_DIR, "template", "password-reset.html")) as f:
+    with open(os.path.join(BASE_DIR.parent, "frontend", "template", "password-reset.html")) as f:
         return HTMLResponse(content=f.read())
 
 @app.get("/contact", response_class=HTMLResponse)
 async def contact_page():
-    with open(os.path.join(BASE_DIR, "template", "contact.html")) as f:
+    with open(os.path.join(BASE_DIR.parent, "frontend", "template", "contact.html")) as f:
         return HTMLResponse(content=f.read())
 
 @app.get("/404", response_class=HTMLResponse)
 async def not_found_page():
-    with open(os.path.join(BASE_DIR, "template", "404.html")) as f:
+    with open(os.path.join(BASE_DIR.parent, "frontend", "template", "404.html")) as f:
         return HTMLResponse(content=f.read())
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
 
 #TODO
 @app.get("/users", response_class=HTMLResponse)
