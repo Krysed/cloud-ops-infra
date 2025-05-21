@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-set -euo pipefail
+set -eu
 
 HOST=backend
 PORT=8000

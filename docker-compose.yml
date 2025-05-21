@@ -15,18 +15,17 @@ services:
 
   backend:
     build:
-      context: .
-      dockerfile: ./backend/Dockerfile #TODO: Change this later when decided on final requirements.txt for the app
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
-      - "8000"
+      - "8000:8000"
     volumes:
-      # - ./frontend/template:/app/frontend/template:ro
-      # - ./frontend/static:/app/frontend/static:ro
       - ./secrets/db_config.json:/app/secrets/db_config.json:ro
     environment:
       - DB_CONFIG_PATH=/app/secrets/db_config.json
       - POSTGRES_HOST=postgres
       - REDIS_HOST=redis
+      - ENV=dev
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
@@ -44,6 +43,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+
+    # build:
+    #   context: .
+    #   dockerfile: ./frontend/Dockerfile
     depends_on:
       backend:
         condition: service_healthy
