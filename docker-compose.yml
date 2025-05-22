@@ -18,7 +18,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - ./secrets/db_config.json:/app/secrets/db_config.json:ro
     environment:
@@ -31,6 +31,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+      start_period: 20s
     depends_on:
       postgres:
         condition: service_healthy
@@ -43,16 +44,12 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-
-    # build:
-    #   context: .
-    #   dockerfile: ./frontend/Dockerfile
     depends_on:
       backend:
         condition: service_healthy
     command: ["/wait_for_backend.sh"]
     ports:
-      - "8000:80"
+      - "3000:80"
     networks:
       - app_network
 
