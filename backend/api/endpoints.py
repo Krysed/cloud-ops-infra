@@ -21,22 +21,22 @@ async def get_users():
 
 @router.post("/submit")
 async def submit(name: str = Form(...), email: str = Form(...)):
-    cursor.execute(f"INSERT INTO users (name, email) VALUES ({name}, {email}) RETURNING id")
+    cursor.execute("INSERT INTO users (name, email) VALUES (%s, %s) RETURNING id", (name, email))
     user_id = cursor.fetchone()["id"]
     db.commit()
 
     user_data = {"id": user_id, "name": name, "email": email}
-    cache.set(f"user: {user_id}")
+    cache.set(f"user: {user_id}", json.dumps(user_data))
     
     return RedirectResponse(url="/users", status_code=303)
 
 @router.get("/user/{user_id}")
 async def get_user(user_id: int):
-    cached = cache.get(f"user:{user_id}")
+    cached = cache.get(f"user:{user_id}", json.dumps(user))
     if cached:
         return json.loads(cached)
     
-    cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")
+    cursor.execute("SELECT * FROM users WHERE id = %s", (user_id))
     user = cursor.fetchone()
     if user:
         cache.set(f"user: user_id", json.dumps(user))
