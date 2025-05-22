@@ -3,30 +3,35 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile
-    image: nginx:alpine
     ports:
       - "80:80"
-    volumes:
-      - ./backend/static:/var/www/static:ro
-      - ./backend/template:/var/www/template:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_started
+      frontend:
+        condition: service_started
     networks:
       - app_network
 
   backend:
     build:
-      context: .
-      dockerfile: ./backend/Dockerfile #TODO: Change this later when decided on final requirements.txt for the app 
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
     volumes:
-      - type: bind
-        source: ./secrets/db_config.json
-        target: /app/secrets/db_config.json
-        read_only: true
+      - ./secrets/db_config.json:/app/secrets/db_config.json:ro
     environment:
       - DB_CONFIG_PATH=/app/secrets/db_config.json
       - POSTGRES_HOST=postgres
       - REDIS_HOST=redis
+      - ENV=dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     depends_on:
       postgres:
         condition: service_healthy
@@ -35,9 +40,22 @@ services:
     networks:
       - app_network
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      backend:
+        condition: service_healthy
+    command: ["/wait_for_backend.sh"]
+    ports:
+      - "3000:80"
+    networks:
+      - app_network
+
   postgres:
     build:
-      context: ./db
+      context: ./postgres
       dockerfile: Dockerfile
     volumes:
       - ./secrets/db_config.json:/tmp/db_config.json:ro

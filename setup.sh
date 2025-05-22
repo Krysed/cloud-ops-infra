@@ -65,7 +65,7 @@ wget https://www.tooplate.com/zip-templates/2136_kool_form_pack.zip
 unzip 2136_kool_form_pack.zip
 rm 2136_kool_form_pack.zip
 
-check_and_move_dir "$(pwd)/backend/static/images/" "2136_kool_form_pack/images/"
-check_and_move_dir "$(pwd)/backend/static/videos/" "2136_kool_form_pack/videos/"
-check_and_move_dir "$(pwd)/backend/static/fonts/" "2136_kool_form_pack/fonts/"
+check_and_move_dir "$(pwd)/frontend/static/images/" "2136_kool_form_pack/images/"
+check_and_move_dir "$(pwd)/frontend/static/videos/" "2136_kool_form_pack/videos/"
+check_and_move_dir "$(pwd)/frontend/static/fonts/" "2136_kool_form_pack/fonts/"
 rm -rf 2136_kool_form_pack/
