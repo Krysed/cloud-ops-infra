@@ -127,15 +127,29 @@ Bootstrap 5 Form Pack Template
                     <div class="row">
 
                         <div class="col-lg-6 col-12 mx-auto">
-                            <form class="custom-form" role="form" method="post">
+                            <form method="POST" action="/api/submit">
                                 <h2 class="hero-title text-center mb-4 pb-2">Create an account</h2>
 
                                 <div class="row">
                                     <div class="col-lg-6 col-md-6 col-12">
                                         <div class="form-floating">
-                                            <input type="text" name="full-name" id="full-name" class="form-control" placeholder="Full Name" required="">
+                                            <input type="text" name="name" id="name" class="form-control" placeholder="Name" required="">
                                             
-                                            <label for="floatingInput">Full Name</label>
+                                            <label for="floatingInput">Name</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6 col-md-6 col-12">
+                                        <div class="form-floating">
+                                            <input type="text" name="surname" id="surname" class="form-control" placeholder="Surname" required="">
+                                            
+                                            <label for="floatingInput">Surname</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6 col-md-6 col-12">
+                                        <div class="form-floating">
+                                            <input type="text" name="username" id="username" class="form-control" placeholder="Username" required="">
+                                            
+                                            <label for="floatingInput">Username</label>
                                         </div>
                                     </div>
 

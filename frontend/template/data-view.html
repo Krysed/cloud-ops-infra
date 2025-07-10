@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Users | Kool Form Pack</title>
+    <title>Current Postings</title>
 
     <!-- Fonts and CSS -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -59,19 +59,24 @@
               <li><a href="/password-reset">Password Reset</a></li>
               <li><a href="/data-view" class="active">Data View</a></li>
               <li><a href="/contact">Contact Form</a></li>
-              <li><a href="/404">Contact Form</a></li>
+              <li><a href="/404">404 Page</a></li>
             </ul>
           </nav>
         </div>
       </div>
 
-      <!-- Users Section -->
+      <!-- Data preview Section -->
       <section class="hero-section d-flex justify-content-center align-items-center">
         <div class="container">
           <div class="row">
             <div class="col-lg-10 col-12 mx-auto">
               <div class="bg-white p-4 rounded shadow-lg">
                 <h2 class="text-center mb-4">User List</h2>
+                <div>
+                  <button id="load-data-btn" class="custom-btn custom-border-btn btn">
+                    Start Query <i class="bi-arrow-left ms-2"></i>
+                  </button>
+                </div>
                 <table class="table table-striped table-hover">
                   <thead class="table-dark">
                     <tr>
@@ -80,14 +85,8 @@
                       <th scope="col">Email</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {% for user in users %}
-                      <tr>
-                        <td>{{ user.id }}</td>
-                        <td>{{ user.username }}</td>
-                        <td>{{ user.email }}</td>
-                      </tr>
-                    {% endfor %}
+                  <tbody id="data-tbody">
+
                   </tbody>
                 </table>
               </div>
@@ -110,5 +109,6 @@
     <script src="/static/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/countdown.js"></script>
     <script src="/static/js/init.js"></script>
+    <script src="/static/js/query_database.js"></script>
   </body>
 </html>
