@@ -5,7 +5,7 @@ set -euo pipefail
 venv_directory=".venv"
 install_scripts_path="$(pwd)/install_scripts"
 
-linux_deps=("pip" "pipx" "curl" "jq" "python3" "uvicorn" "docker" "terraform" "kubectl")
+linux_deps=("pip" "pipx" "curl" "jq" "python3" "uvicorn" "docker" "terraform" "kubectl" "minikube")
 install_command="sudo apt-get install -y"
 
 function install_tech () 
