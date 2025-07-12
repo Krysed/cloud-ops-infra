@@ -1,12 +1,7 @@
 name: check_python
 
 on:
-  pull_request:
-    paths:
-      - "*.py"
-      - "pyproject.toml"
-      - "requirements.txt"
-      - "backend/requirements.txt"
+  pull_request
 
 jobs:
   lint:
