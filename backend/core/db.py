@@ -1,7 +1,9 @@
 import psycopg2
 import psycopg2.extras
 from .config import POSTGRES_CONFIG
+from .cache import get_redis_client
 from contextlib import contextmanager
+from datetime import datetime, timezone
 
 @contextmanager
 def get_db_connection():
@@ -29,7 +31,7 @@ def create_user(name: str, surname: str, username: str, email: str, hashed_passw
         with conn.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO users (name, surname, username, email, user_type, hashed_password)
-                VALUES (%s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id
             """, (name, surname, username, email, "regular", hashed_password))
             user = cursor.fetchone()
@@ -58,6 +60,7 @@ def update_user_in_db(user_id: int, name: str = None, surname: str = None, usern
             if email:
                 cursor.execute("UPDATE users SET email = %s WHERE id = %s", (email, user_id))
             conn.commit()
+            get_redis_client().delete(f"user:{user_id}")
             return True
 
 def delete_user_from_db(user_id: int) -> bool:
@@ -68,21 +71,24 @@ def delete_user_from_db(user_id: int) -> bool:
                 return False
 
             conn.commit()
+            get_redis_client().delete(f"user:{user_id}")
             return True
 
-def create_posting_in_db(title: str, description: str, category: str, user_id: int) -> int:
+def create_posting_in_db(title: str, post_description: str, category: str, user_id: int) -> int:
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(
                 """
-                INSERT INTO postings (title, description, category, user_id)
+                INSERT INTO postings (title, post_description, category, user_id)
                 VALUES (%s, %s, %s, %s) RETURNING id
                 """,
-                (title, description, category, user_id)
+                (title, post_description, category, user_id)
             )
-            posting_id = cursor.fetchone()[0]
+            row = cursor.fetchone()
+            if row is None:
+                raise ValueError("Insert failed: no ID returned from insert statement.")
             conn.commit()
-            return posting_id
+            return row["id"] # posting id
 
 def update_posting_in_db(posting_id: int, title: str = None, category: str = None, post_description: str = None, status: str = None) -> bool:
     with get_db_connection() as conn:
@@ -99,8 +105,10 @@ def update_posting_in_db(posting_id: int, title: str = None, category: str = Non
                 cursor.execute("UPDATE postings SET post_description = %s WHERE id = %s", (post_description, posting_id))
             if status:
                 cursor.execute("UPDATE postings SET status = %s WHERE id = %s", (status, posting_id))
-
+            cursor.execute("UPDATE postings SET updated_at = %s WHERE id = %s", (datetime.now(timezone.utc), posting_id))
+                
             conn.commit()
+            get_redis_client().delete(f"posting id:{posting_id}")
             return True
 
 def delete_posting_from_db(posting_id: int) -> bool:
@@ -111,4 +119,68 @@ def delete_posting_from_db(posting_id: int) -> bool:
                 return False
 
             conn.commit()
+            get_redis_client().delete(f"posting id:{posting_id}")
             return True
+
+def get_all_postings():
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM postings ORDER BY id DESC")
+            return cursor.fetchall()
+
+def get_posting_by_id(posting_id):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM postings WHERE id = %s", (posting_id,))
+            return cursor.fetchone()
+
+def get_postings_by_user(user_id):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM postings WHERE user_id = %s", (user_id,))
+            return cursor.fetchall()
+
+def apply_to_posting(user_id: int, posting_id: int) -> bool:
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT id FROM postings WHERE id = %s", (posting_id,))
+            if not cursor.fetchone():
+                return False
+
+            # check if applied already
+            cursor.execute(
+                "SELECT 1 FROM applications WHERE user_id = %s AND posting_id = %s",
+                (user_id, posting_id)
+            )
+
+            if cursor.fetchone():
+                return False
+
+            cursor.execute(
+                "INSERT INTO applications (user_id, posting_id) VALUES (%s, %s)",
+                (user_id, posting_id)
+            )
+            conn.commit()
+            return True
+
+def get_applications_by_user(user_id):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT applications.*, postings.title 
+                FROM applications 
+                JOIN postings ON applications.posting_id = postings.id 
+                WHERE applications.user_id = %s
+            """, (user_id,))
+            return cursor.fetchall()
+
+def get_applications_by_posting(posting_id):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT applications.*, users.name, users.email 
+                FROM applications 
+                JOIN users ON applications.user_id = users.id 
+                WHERE applications.posting_id = %s
+            """, (posting_id,))
+            return cursor.fetchall()
