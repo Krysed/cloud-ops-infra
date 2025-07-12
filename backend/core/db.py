@@ -67,7 +67,6 @@ def delete_user_from_db(user_id: int) -> bool:
         cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
         if cursor.rowcount == 0:
             return False
-
         conn.commit()
         get_redis_client().delete(f"user:{user_id}")
         return True
