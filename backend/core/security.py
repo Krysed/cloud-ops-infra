@@ -1,6 +1,8 @@
-from .db import get_user_by_email
-from .cache import get_redis_client
 import bcrypt
+
+from .cache import get_redis_client
+from .db import get_user_by_email
+
 
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
