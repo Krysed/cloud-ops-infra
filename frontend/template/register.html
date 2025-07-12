@@ -11,15 +11,10 @@
 
         <!-- CSS FILES -->                
         <link rel="preconnect" href="https://fonts.googleapis.com">
-        
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
         <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,200;0,400;0,700;1,200&family=Unbounded:wght@400;700&display=swap" rel="stylesheet">
-        
         <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-
         <link href="/static/css/bootstrap-icons.css" rel="stylesheet">
-
         <link href="/static/css/tooplate-kool-form-pack.css" rel="stylesheet">
 <!--
 
@@ -88,25 +83,12 @@ Bootstrap 5 Form Pack Template
                 <div class="offcanvas-body d-flex flex-column justify-content-center align-items-center">
                     <nav>
                         <ul>
-                            <li>
-                                <a href="/login">Login Form</a>
-                            </li>
-
-                            <li>
-                                <a class="active" href="/register">Create an account</a>
-                            </li>
-
-                            <li>
-                                <a href="/password-reset">Password Reset</a>
-                            </li>
-
-                            <li>
-                                <a href="/404">404 Page</a>
-                            </li>
-
-                            <li>
-                                <a href="/contact">Contact Form</a>
-                            </li>
+                            <li><a href="/login">Login Form</a></li>
+                            <li><a class="active" href="/register">Create an account</a></li>
+                            <li><a href="/password-reset">Password Reset</a></li>
+                            <li><a href="/data-view">Data View</a></li>
+                            <li><a href="/contact">Contact Form</a></li>
+                            <li><a href="/404">404 Page</a></li>
                         </ul>
                     </nav>
                 </div>
@@ -145,15 +127,29 @@ Bootstrap 5 Form Pack Template
                     <div class="row">
 
                         <div class="col-lg-6 col-12 mx-auto">
-                            <form class="custom-form" role="form" method="post">
+                            <form method="POST" action="/api/users">
                                 <h2 class="hero-title text-center mb-4 pb-2">Create an account</h2>
 
                                 <div class="row">
                                     <div class="col-lg-6 col-md-6 col-12">
                                         <div class="form-floating">
-                                            <input type="text" name="full-name" id="full-name" class="form-control" placeholder="Full Name" required="">
+                                            <input type="text" name="name" id="name" class="form-control" placeholder="Name" required="">
                                             
-                                            <label for="floatingInput">Full Name</label>
+                                            <label for="floatingInput">Name</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6 col-md-6 col-12">
+                                        <div class="form-floating">
+                                            <input type="text" name="surname" id="surname" class="form-control" placeholder="Surname" required="">
+                                            
+                                            <label for="floatingInput">Surname</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6 col-md-6 col-12">
+                                        <div class="form-floating">
+                                            <input type="text" name="username" id="username" class="form-control" placeholder="Username" required="">
+                                            
+                                            <label for="floatingInput">Username</label>
                                         </div>
                                     </div>
 

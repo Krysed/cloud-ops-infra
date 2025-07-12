@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Current Postings</title>
+
+    <!-- Fonts and CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,200;0,400;0,700;1,200&family=Unbounded:wght@400;700&display=swap" rel="stylesheet"/>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/static/css/bootstrap-icons.css" rel="stylesheet" />
+    <link href="/static/css/tooplate-kool-form-pack.css" rel="stylesheet" />
+  </head>
+
+  <body>
+    <main>
+      <!-- Header with Sidebar Trigger -->
+      <header class="site-header">
+        <div class="container">
+          <div class="row justify-content-between">
+            <div class="col-lg-12 col-12 d-flex">
+              <a class="site-header-text d-flex justify-content-center align-items-center me-auto" href="/">
+                <i class="bi-box"></i>
+                <span>Kool Form Pack</span>
+              </a>
+
+              <ul class="social-icon d-flex justify-content-center align-items-center mx-auto">
+                <span class="text-white me-4 d-none d-lg-block">Stay connected</span>
+                <li class="social-icon-item"><a href="#" class="social-icon-link bi-instagram"></a></li>
+                <li class="social-icon-item"><a href="#" class="social-icon-link bi-twitter"></a></li>
+                <li class="social-icon-item"><a href="#" class="social-icon-link bi-whatsapp"></a></li>
+              </ul>
+
+              <div>
+                <a href="#" class="custom-btn custom-border-btn btn" data-bs-toggle="modal" data-bs-target="#subscribeModal">
+                  Notify me <i class="bi-arrow-right ms-2"></i>
+                </a>
+              </div>
+
+              <a class="bi-list offcanvas-icon" data-bs-toggle="offcanvas" href="#offcanvasMenu" role="button" aria-controls="offcanvasMenu"></a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Offcanvas Sidebar -->
+      <div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="offcanvasMenu" aria-labelledby="offcanvasMenuLabel">
+        <div class="offcanvas-header">
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column justify-content-center align-items-center">
+          <nav>
+            <ul>
+              <li><a href="/login">Login Form</a></li>
+              <li><a href="/register">Create an account</a></li>
+              <li><a href="/password-reset">Password Reset</a></li>
+              <li><a href="/data-view" class="active">Data View</a></li>
+              <li><a href="/contact">Contact Form</a></li>
+              <li><a href="/404">404 Page</a></li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Data preview Section -->
+      <section class="hero-section d-flex justify-content-center align-items-center">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-10 col-12 mx-auto">
+              <div class="bg-white p-4 rounded shadow-lg">
+                <h2 class="text-center mb-4">User List</h2>
+                <div>
+                  <button id="load-data-btn" class="custom-btn custom-border-btn btn">
+                    Start Query <i class="bi-arrow-left ms-2"></i>
+                  </button>
+                </div>
+                <table class="table table-striped table-hover">
+                  <thead class="table-dark">
+                    <tr>
+                      <th scope="col">ID</th>
+                      <th scope="col">Username</th>
+                      <th scope="col">Email</th>
+                    </tr>
+                  </thead>
+                  <tbody id="data-tbody">
+
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Background Video -->
+        <div class="video-wrap">
+          <video autoplay loop muted class="custom-video" poster="">
+            <source src="/static/videos/video.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      </section>
+    </main>
+
+    <!-- JS -->
+    <script src="/static/js/jquery.min.js"></script>
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/countdown.js"></script>
+    <script src="/static/js/init.js"></script>
+    <script src="/static/js/query_database.js"></script>
+  </body>
+</html>
