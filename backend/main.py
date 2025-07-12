@@ -1,6 +1,6 @@
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI
 from api import endpoints
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 app.add_middleware(

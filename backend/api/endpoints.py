@@ -1,26 +1,27 @@
-from fastapi import APIRouter, Form, HTTPException
-from fastapi.responses import RedirectResponse, JSONResponse
+import json
+
+from core.cache import get_redis_client
+from core.db import (
+    apply_to_posting,
+    create_posting_in_db,
+    create_user,
+    delete_posting_from_db,
+    delete_user_from_db,
+    get_all_postings,
+    get_applications_by_posting,
+    get_applications_by_user,
+    get_db_connection,
+    get_posting_by_id,
+    get_postings_by_user,
+    get_user_by_email,
+    update_posting_in_db,
+    update_user_in_db,
+)
 from core.logger import logger
 from core.security import hash_password, login_user, logout_user
-from core.cache import get_redis_client
 from core.utility import json_serializer
-from core.db import (
-    get_db_connection, 
-    get_user_by_email, 
-    create_user, 
-    update_user_in_db, 
-    delete_user_from_db, 
-    create_posting_in_db, 
-    update_posting_in_db, 
-    delete_posting_from_db,
-    apply_to_posting,
-    get_applications_by_user,
-    get_applications_by_posting,
-    get_all_postings,
-    get_posting_by_id,
-    get_postings_by_user
-)
-import json
+from fastapi import APIRouter, Form, HTTPException
+from fastapi.responses import JSONResponse, RedirectResponse
 
 router = APIRouter()
 api_router = APIRouter(prefix="/api")
@@ -46,15 +47,14 @@ async def get_user(user_id: int):
     if cached:
         return json.loads(cached)
 
-    with get_db_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-            user = cursor.fetchone()
-            if user:
-                cache.set(f"user:{user_id}", json.dumps(user, default=json_serializer))
-                return user
-            else:
-                raise HTTPException(status_code=404, detail="User not found")
+    with get_db_connection() as conn, conn.cursor() as cursor:
+        cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+        user = cursor.fetchone()
+        if user:
+            cache.set(f"user:{user_id}", json.dumps(user, default=json_serializer))
+            return user
+        else:
+            raise HTTPException(status_code=404, detail="User not found")
 
 @api_router.put("/users/{user_id}")
 async def update_user(
