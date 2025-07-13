@@ -1,3 +1,5 @@
+import re
+
 import bcrypt
 
 from .cache import get_redis_client
@@ -10,6 +12,15 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+
+def is_password_valid(password: str) -> bool:
+    if len(password) < 6:
+        return False
+    if not re.search(r'[A-Z]', password):
+        return False
+    if not re.search(r'\d', password):
+        return False
+    return bool(re.search(r'[!@#$%^&*(),.?":{}|<>]', password))
 
 def login_user(email: str, password: str) -> int | None:
     user = get_user_by_email(email)

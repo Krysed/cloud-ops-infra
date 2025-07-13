@@ -4,21 +4,21 @@ on:
   pull_request
 
 jobs:
-  lint:
-    name:
-        Run ruff linter
-    runs-on:
-      ubuntu-latest
+  lint_and_test:
+    runs-on: ubuntu-latest
     container:
       image: python:alpine3.21
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    - name: Install deps
-      run: |
-        apk add --no-cache gcc musl-dev libffi-dev
-        pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r backend/requirements.txt
-    - name: Run Ruff
-      run: ruff check . --output-format=github
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          apk add --no-cache gcc musl-dev libffi-dev
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r backend/requirements.txt
+
+      - name: Run Ruff
+        run: ruff check . --output-format=github
+
+      # - name: Run Pytest
+      #   run: pytest --cov=backend.core.db --cov-report=term-missing

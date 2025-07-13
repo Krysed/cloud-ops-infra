@@ -38,7 +38,7 @@ async def submit(name: str = Form(...), surname: str = Form(...), username: str 
 
     user_data = {"id": user_id, "name": name, "email": email}
     get_redis_client().set(f"user:{user_id}", json.dumps(user_data))
-    return RedirectResponse(url=f"/login", status_code=303)
+    return RedirectResponse(url="/login", status_code=303)
 
 @api_router.get("/users/{user_id}")
 async def get_user(user_id: int):
