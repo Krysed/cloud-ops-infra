@@ -1,7 +1,39 @@
+import json
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+
+@pytest.fixture(autouse=True)
+def temp_db_config(tmp_path, monkeypatch):
+    # Create fake config content
+    fake_config = {
+        "REDIS": {
+            "host": "localhost",
+            "port": 6379,
+            "password": None,
+            "db": 0
+        },
+        "POSTGRES": {
+            "dbname": "testdb",
+            "user": "testuser",
+            "password": "testpass",
+            "host": "localhost",
+            "port": 5432
+        }
+    }
+    # Create temp file and write JSON
+    config_file = tmp_path / "db_config.json"
+    config_file.write_text(json.dumps(fake_config))
+
+    # Patch environment variable to point to this temp file
+    monkeypatch.setenv("DB_CONFIG_PATH", str(config_file))
+
+    # Also make sure ENV is not 'production', so fallback is triggered
+    monkeypatch.delenv("ENV", raising=False)
+
+    # Return path for reference if needed
+    return config_file
 
 @pytest.fixture
 def mock_cursor():

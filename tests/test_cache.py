@@ -1,28 +1,7 @@
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from backend.core import cache
 
-
-@pytest.fixture(autouse=True)
-def mock_config(monkeypatch):
-    fake_redis_config = {
-        "host": "localhost",
-        "port": 6379,
-        "db": 0,
-        "password": None,
-    }
-    fake_postgres_config = {
-        "dbname": "testdb",
-        "user": "testuser",
-        "password": "testpass",
-        "host": "localhost",
-        "port": 5432,
-    }
-
-    monkeypatch.setattr("backend.core.config.REDIS_CONFIG", fake_redis_config)
-    monkeypatch.setattr("backend.core.config.POSTGRES_CONFIG", fake_postgres_config)
 
 def test_get_redis_client_calls_redis_with_config():
     fake_redis_instance = MagicMock()
