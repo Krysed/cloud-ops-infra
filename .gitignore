@@ -2,6 +2,8 @@ secrets/*
 !secrets/*.example
 .venv/
 .ruff_cache/
+.pytest_cache
+.coverage
 __pycache__
 frontend/static/images/
 frontend/static/videos/
