@@ -21,7 +21,7 @@ from core.logger import logger
 from core.security import hash_password, login_user, logout_user
 from core.utility import json_serializer
 from fastapi import APIRouter, Form, HTTPException
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 api_router = APIRouter(prefix="/api")
@@ -31,14 +31,14 @@ async def health_check():
     return {"status": "healthy"}
 
 @api_router.post("/users")
-async def submit(name: str = Form(...), surname: str = Form(...), username: str = Form(...), email: str = Form(...)):
+async def submit(name: str = Form(...), surname: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...)):
     if get_user_by_email(email):
         raise HTTPException(status_code=400, detail="User already exists")
-    user_id = create_user(name, surname, username, email, hashed_password=hash_password("user_password")) #TODO: <- Change this - hash_password("user_password")
+    user_id = create_user(name, surname, username, email, hashed_password=hash_password(password))
 
     user_data = {"id": user_id, "name": name, "email": email}
     get_redis_client().set(f"user:{user_id}", json.dumps(user_data))
-    return RedirectResponse(url="/login", status_code=303)
+    return JSONResponse(content={"message": "Account created successfully", "user_id": user_id})
 
 @api_router.get("/users/{user_id}")
 async def get_user(user_id: int):
@@ -136,12 +136,18 @@ async def api_get_applications_by_user(user_id: int):
 async def api_get_applications_by_posting(posting_id: int):
     return get_applications_by_posting(posting_id)
 
+@api_router.post("/contact")
+async def contact_form(full_name: str = Form(..., alias="full-name"), email: str = Form(...), message: str = Form(...)):
+    logger.info(f"Contact form submission from: {email}")
+    return JSONResponse(content={"message": "Thank you for your message! We'll get back to you soon."})
+
 @api_router.post("/login")
 async def login(email: str = Form(...), password: str = Form(...)):
     logger.info(f"Login attempt: {email}")
     user_id = login_user(email, password)
     if user_id is None:
         raise HTTPException(status_code=401, detail="Invalid email or password")
+    return JSONResponse(content={"message": "Login successful", "user_id": user_id})
 
 @api_router.post("/logout")
 async def logout(user_id: int = Form(...)):
