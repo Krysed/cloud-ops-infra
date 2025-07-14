@@ -9,3 +9,4 @@ frontend/static/images/
 frontend/static/videos/
 frontend/static/fonts/
 utility/
+.env
