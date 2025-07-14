@@ -21,7 +21,7 @@ from core.logger import logger
 from core.security import hash_password, login_user, logout_user
 from core.utility import json_serializer
 from fastapi import APIRouter, Form, HTTPException
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 api_router = APIRouter(prefix="/api")
