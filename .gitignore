@@ -9,4 +9,3 @@ frontend/static/fonts/
 utility/
 *-secret.yaml
 .env
-kube_check.sh

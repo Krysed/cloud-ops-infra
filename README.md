@@ -19,3 +19,32 @@ Required environment variables:
 - `POSTGRES_HOST`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT`
 - `REDIS_HOST`, `REDIS_PASSWORD`, `REDIS_PORT`, `REDIS_DB`
 - `ENV` (set to `dev` for development)
+
+## Kubernetes Local Setup
+
+This project includes a Kubernetes deployment for local development using Minikube.
+
+### Quick Start
+
+1. **Start Minikube**: `minikube start --memory=4096 --cpus=2`
+2. **Deploy**: `./kube_check.sh deploy`
+3. **Get URL**: `minikube service nginx-service --url -n dev`
+4. **Access** the application in your browser
+
+### Commands
+
+- `./kube_check.sh deploy` - Deploy all resources
+- `./kube_check.sh status` - Show deployment status  
+- `./kube_check.sh cleanup` - Remove all resources
+- `./kube_check.sh help` - Show help
+
+### Architecture
+
+The deployment includes Frontend (Nginx), Backend (FastAPI), Database (PostgreSQL), Cache (Redis), and Reverse Proxy (Nginx) running in a `dev` namespace with persistent storage.
+
+### Cleanup
+
+```bash
+./kube_check.sh cleanup
+minikube stop
+```
