@@ -2,7 +2,7 @@
 
 set -eu
 
-HOST=backend
+HOST=backend-service
 PORT=8000
 
 echo "Waiting for $HOST:$PORT to be ready..."

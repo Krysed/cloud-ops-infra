@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+  labels:
+    app: myapp
+    component: postgres
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce          # Only one pod can mount this
+  persistentVolumeReclaimPolicy: Retain  # Keep data if PVC is deleted
+  storageClassName: manual
+  hostPath:                  # For minikube - stores on minikube VM
+    path: /data/postgres
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: dev            # Use dev namespace, not postgres
+  labels:
+    app: myapp
+    component: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: manual
+  volumeName: postgres-pv
