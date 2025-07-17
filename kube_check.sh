@@ -23,7 +23,13 @@ wait_for_resource() {
     local namespace=${3:-dev}
     
     echo -e "${YELLOW}Waiting for ${resource_type}/${resource_name} to be ready...${NC}"
-    kubectl wait --for=condition=ready ${resource_type}/${resource_name} -n ${namespace} --timeout=300s
+    if [[ "${resource_type}" == "statefulset" ]]; then
+        kubectl wait --for=jsonpath='{.status.readyReplicas}'=1 "${resource_type}/${resource_name}" -n "${namespace}" --timeout=300s
+    elif [[ "${resource_type}" == "deployment" ]]; then
+        kubectl wait --for=condition=available "${resource_type}/${resource_name}" -n "${namespace}" --timeout=300s
+    else
+        kubectl wait --for=condition=ready "${resource_type}/${resource_name}" -n "${namespace}" --timeout=300s
+    fi
 }
 
 # Function to check if minikube is running
@@ -82,7 +88,6 @@ deploy_resources() {
     kubectl apply -f "${K8S_DIR}/postgres/postgres-secret.yaml"
     kubectl apply -f "${K8S_DIR}/postgres/postgres-configmap.yaml"
     kubectl apply -f "${K8S_DIR}/redis/redis-secret.yaml"
-    kubectl apply -f "${K8S_DIR}/nginx/nginx-configmap.yaml"
     
     # 4. Services (before deployments for DNS)
     echo -e "${YELLOW}4. Creating services...${NC}"
