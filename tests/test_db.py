@@ -199,3 +199,20 @@ def test_get_user_by_email(patch_psycopg2_connect, mock_cursor):
 
     assert result == expected_user
     mock_cursor.execute.assert_called_once_with("SELECT * FROM users WHERE email = %s", ("john@example.com",))
+
+def test_get_user_by_username(patch_psycopg2_connect, mock_cursor):
+    expected_user = {"id": 1, "email": "john@example.com", "username": "johndoe"}
+    mock_cursor.fetchone.return_value = expected_user
+
+    result = db.get_user_by_username("johndoe")
+
+    assert result == expected_user
+    mock_cursor.execute.assert_called_once_with("SELECT * FROM users WHERE username = %s", ("johndoe",))
+
+def test_get_user_by_username_not_found(patch_psycopg2_connect, mock_cursor):
+    mock_cursor.fetchone.return_value = None
+
+    result = db.get_user_by_username("nonexistent")
+
+    assert result is None
+    mock_cursor.execute.assert_called_once_with("SELECT * FROM users WHERE username = %s", ("nonexistent",))

@@ -1,7 +1,7 @@
-import re
 import json
+import re
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import bcrypt
 
@@ -28,7 +28,7 @@ def is_password_valid(password: str) -> bool:
 def create_session(user_id: int) -> str:
     session_token = secrets.token_urlsafe(32)
     redis = get_redis_client()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     session_data = {
         "user_id": user_id,
         "created_at": now.isoformat(),
@@ -49,7 +49,7 @@ def get_session_user(session_token: str) -> dict | None:
     try:
         session = json.loads(session_data)
         expires_at = datetime.fromisoformat(session["expires_at"])
-        if datetime.now(timezone.utc) > expires_at:
+        if datetime.now(UTC) > expires_at:
             redis.delete(f"session:{session_token}")
             return None
         return session

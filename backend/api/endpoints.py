@@ -19,7 +19,7 @@ from core.db import (
     update_user_in_db,
 )
 from core.logger import logger
-from core.security import hash_password, login_user, logout_user, get_session_user
+from core.security import get_session_user, hash_password, login_user, logout_user
 from core.utility import json_serializer
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -169,7 +169,7 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
         # Check if user is already logged in
         session_token = request.cookies.get("session_token")
         if session_token and get_session_user(session_token):
-            logger.info(f"User already logged in, redirecting to data view")
+            logger.info("User already logged in, redirecting to data view")
             return RedirectResponse(url="/data-view.html", status_code=303)
         
         logger.info(f"Login attempt: {email}")
@@ -199,7 +199,7 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
 async def logout(request: Request):
     session_token = request.cookies.get("session_token")
     logger.info(f"Logout attempt with session token: {session_token}")
-    success = logout_user(session_token)
+    logout_user(session_token)
     
     response = RedirectResponse(url="/index.html?success=logged_out", status_code=303)
     response.delete_cookie("session_token")
