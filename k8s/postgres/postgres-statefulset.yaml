@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-statefulset
+  namespace: dev
+  labels:
+    app: myapp
+    component: postgres
+spec:
+  serviceName: postgres-service  # Headless service name
+  replicas: 1                   # Single postgres instance
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: infra-postgres:latest
+        imagePullPolicy: Never    # For local minikube images
+        ports:
+        - containerPort: 5432
+        # Environment variables from secret
+        envFrom:
+        - secretRef:
+            name: postgres-secret
+        # Mount persistent storage
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+          subPath: postgres       # Create subfolder to avoid permission issues
+        - name: postgres-init-script
+          mountPath: /docker-entrypoint-initdb.d/init.sql
+          subPath: init.sql
+          readOnly: true
+        # Resource limits
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        # Health checks
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+      - name: postgres-init-script
+        configMap:
+          name: postgres-config
