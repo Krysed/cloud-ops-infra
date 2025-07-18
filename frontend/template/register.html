@@ -16,6 +16,24 @@
         <link href="/static/css/bootstrap.min.css" rel="stylesheet">
         <link href="/static/css/bootstrap-icons.css" rel="stylesheet">
         <link href="/static/css/tooplate-kool-form-pack.css" rel="stylesheet">
+        <style>
+            .alert {
+                padding: 15px;
+                margin-bottom: 20px;
+                border: 1px solid transparent;
+                border-radius: 4px;
+            }
+            .alert-danger {
+                color: #721c24;
+                background-color: #f8d7da;
+                border-color: #f5c6cb;
+            }
+            .alert-success {
+                color: #155724;
+                background-color: #d4edda;
+                border-color: #c3e6cb;
+            }
+        </style>
 <!--
 
 Tooplate 2136 Kool Form Pack
@@ -64,6 +82,10 @@ Bootstrap 5 Form Pack Template
                                 <a href="#" class="custom-btn custom-border-btn btn" data-bs-toggle="modal" data-bs-target="#subscribeModal">Notify me
                                     <i class="bi-arrow-right ms-2"></i>
                                 </a>
+                            </div>
+
+                            <div class="auth-buttons ms-3">
+                                <!-- Auth buttons will be populated by auth.js -->
                             </div>
 
                             <a class="bi-list offcanvas-icon" data-bs-toggle="offcanvas" href="#offcanvasMenu" role="button" aria-controls="offcanvasMenu"></a>
@@ -130,6 +152,28 @@ Bootstrap 5 Form Pack Template
                         <div class="col-lg-6 col-12 mx-auto">
                             <form method="POST" action="/api/users">
                                 <h2 class="hero-title text-center mb-4 pb-2">Create an account</h2>
+                                
+                                <!-- Success/Error Messages -->
+                                <div id="messages">
+                                    <script>
+                                        // Show messages based on URL parameters
+                                        const urlParams = new URLSearchParams(window.location.search);
+                                        const error = urlParams.get('error');
+                                        const success = urlParams.get('success');
+                                        
+                                        if (error === 'username_email_same') {
+                                            document.getElementById('messages').innerHTML = '<div class="alert alert-danger">Username and email cannot be the same. Please choose a different username.</div>';
+                                        } else if (error === 'email_taken') {
+                                            document.getElementById('messages').innerHTML = '<div class="alert alert-danger">Email address is already in use. Please try logging in or use a different email.</div>';
+                                        } else if (error === 'username_taken') {
+                                            document.getElementById('messages').innerHTML = '<div class="alert alert-danger">Username is already taken. Please choose a different username.</div>';
+                                        } else if (error === 'server_error') {
+                                            document.getElementById('messages').innerHTML = '<div class="alert alert-danger">Server error. Please try again later.</div>';
+                                        } else if (success === 'account_created') {
+                                            document.getElementById('messages').innerHTML = '<div class="alert alert-success">Account created successfully! Please login.</div>';
+                                        }
+                                    </script>
+                                </div>
 
                                 <div class="row">
                                     <div class="col-lg-6 col-md-6 col-12">
@@ -209,7 +253,6 @@ Bootstrap 5 Form Pack Template
         <script src="/static/js/bootstrap.bundle.min.js"></script>
         <script src="/static/js/countdown.js"></script>
         <script src="/static/js/init.js"></script>
-        <script src="/static/js/register.js"></script>
 
     </body>
 </html>
