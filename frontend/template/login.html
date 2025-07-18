@@ -54,7 +54,7 @@ Bootstrap 5 Form Pack Template
                     <div class="row justify-content-between">
 
                         <div class="col-lg-12 col-12 d-flex">
-                            <a class="site-header-text d-flex justify-content-center align-items-center me-auto" href="index.html">
+                            <a class="site-header-text d-flex justify-content-center align-items-center me-auto" href="/">
                                 <i class="bi-box"></i>
 
                                 <span>
@@ -85,7 +85,7 @@ Bootstrap 5 Form Pack Template
                             </div>
 
                             <div class="auth-buttons ms-3">
-                                <!-- Auth buttons will be populated by auth.js -->
+                                <!-- Auth buttons will be populated by JavaScript -->
                             </div>
 
                             <a class="bi-list offcanvas-icon" data-bs-toggle="offcanvas" href="#offcanvasMenu" role="button" aria-controls="offcanvasMenu"></a>
@@ -105,13 +105,7 @@ Bootstrap 5 Form Pack Template
                 <div class="offcanvas-body d-flex flex-column justify-content-center align-items-center">
                     <nav>
                         <ul>
-                            <li><a class="active" href="/login">Login Form</a></li>
-                            <li><a href="/register">Create an account</a></li>
-                            <li><a href="/password-reset">Password Reset</a></li>
-                            <li><a href="/data-view">Data View</a></li>
-                            <li><a href="/contact">Contact Form</a></li>
-                            <li><a href="/profile">User Profile</a></li>
-                            <li><a href="/404">404 Page</a></li>
+                            <!-- Navigation items will be populated by JavaScript -->
                         </ul>
                     </nav>
                 </div>
@@ -183,12 +177,16 @@ Bootstrap 5 Form Pack Template
                                     <label for="password">Password</label>
                                 </div>
 
-                                <div class="form-check mb-4">
-                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
-                                  
-                                    <label class="form-check-label" for="flexCheckDefault">
-                                        Remember me
-                                    </label>
+                                <div class="form-check mb-4 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            Remember me
+                                        </label>
+                                    </div>
+                                    <div>
+                                        <a href="/password-reset" class="btn btn-link btn-sm text-decoration-none">Reset Password</a>
+                                    </div>
                                 </div>
 
                                 <div class="row justify-content-center align-items-center">
@@ -197,7 +195,7 @@ Bootstrap 5 Form Pack Template
                                     </div>
 
                                     <div class="col-lg-5 col-12">
-                                        <a href="register.html" class="btn custom-btn custom-border-btn">Register</a>
+                                        <a href="/register" class="btn custom-btn custom-border-btn">Register</a>
                                     </div>
                                 </div>
 
@@ -222,6 +220,8 @@ Bootstrap 5 Form Pack Template
         <script src="/static/js/bootstrap.bundle.min.js"></script>
         <script src="/static/js/countdown.js"></script>
         <script src="/static/js/init.js"></script>
+        <script src="/static/js/auth-buttons.js"></script>
+        <script src="/static/js/navigation.js"></script>
 
     </body>
 </html>

@@ -217,3 +217,71 @@ async def auth_status(request: Request):
         })
     else:
         return JSONResponse(content={"authenticated": False})
+
+@api_router.get("/auth/buttons")
+async def auth_buttons(request: Request):
+    session_token = request.cookies.get("session_token")
+    session_data = get_session_user(session_token)
+    
+    if session_data:
+        return JSONResponse(content={
+            "authenticated": True,
+            "action": "logout",
+            "method": "POST",
+            "url": "/api/logout",
+            "text": "Logout",
+            "icon": "bi-box-arrow-right"
+        })
+    else:
+        return JSONResponse(content={
+            "authenticated": False,
+            "action": "login",
+            "method": "GET",
+            "url": "/login.html",
+            "text": "Login",
+            "icon": "bi-box-arrow-in-right"
+        })
+
+# Authentication-aware redirects
+@router.get("/")
+async def root(request: Request):
+    session_token = request.cookies.get("session_token")
+    if session_token and get_session_user(session_token):
+        return RedirectResponse(url="/data-view.html", status_code=302)
+    return RedirectResponse(url="/index.html", status_code=302)
+
+@router.get("/login")
+async def login_redirect(request: Request):
+    session_token = request.cookies.get("session_token")
+    if session_token and get_session_user(session_token):
+        return RedirectResponse(url="/data-view.html", status_code=302)
+    return RedirectResponse(url="/login.html", status_code=302)
+
+@router.get("/register")
+async def register_redirect(request: Request):
+    session_token = request.cookies.get("session_token")
+    if session_token and get_session_user(session_token):
+        return RedirectResponse(url="/data-view.html", status_code=302)
+    return RedirectResponse(url="/register.html", status_code=302)
+
+@router.get("/data-view")
+async def data_view_redirect(request: Request):
+    session_token = request.cookies.get("session_token")
+    if not session_token or not get_session_user(session_token):
+        return RedirectResponse(url="/login.html", status_code=302)
+    return RedirectResponse(url="/data-view.html", status_code=302)
+
+@router.get("/profile")
+async def profile_redirect(request: Request):
+    session_token = request.cookies.get("session_token")
+    if not session_token or not get_session_user(session_token):
+        return RedirectResponse(url="/login.html", status_code=302)
+    return RedirectResponse(url="/profile.html", status_code=302)
+
+@router.get("/contact")
+async def contact_redirect():
+    return RedirectResponse(url="/contact.html", status_code=302)
+
+@router.get("/password-reset")
+async def password_reset_redirect():
+    return RedirectResponse(url="/password-reset.html", status_code=302)
