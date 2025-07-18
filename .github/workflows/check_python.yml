@@ -21,4 +21,5 @@ jobs:
         run: ruff check . --output-format=github
 
       - name: Run Pytest
-        run: pytest --cov=backend.core.db --cov-report=term-missing
+        run: pytest --cov --cov-report=term-missing
+
