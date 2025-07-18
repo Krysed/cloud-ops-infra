@@ -57,6 +57,10 @@
                                 </a>
                             </div>
 
+                            <div class="auth-buttons ms-3">
+                                <!-- Auth buttons will be populated by backend -->
+                            </div>
+
                             <a class="bi-list offcanvas-icon" data-bs-toggle="offcanvas" href="#offcanvasMenu" role="button" aria-controls="offcanvasMenu"></a>
 
                         </div>
@@ -74,13 +78,7 @@
                 <div class="offcanvas-body d-flex flex-column justify-content-center align-items-center">
                     <nav>
                         <ul>
-                            <li><a href="/login">Login Form</a></li>
-                            <li><a href="/register">Create an account</a></li>
-                            <li><a href="/password-reset">Password Reset</a></li>
-                            <li><a href="/data-view">Data View</a></li>
-                            <li><a href="/contact">Contact Form</a></li>
-                            <li><a class="active" href="/profile">User Profile</a></li>
-                            <li><a href="/404">404 Page</a></li>
+                            <!-- Navigation items will be populated by JavaScript -->
                         </ul>
                     </nav>
                 </div>
@@ -148,6 +146,7 @@
 
                                             <div class="text-center">
                                                 <button type="submit" class="btn custom-btn">Update Profile</button>
+                                                <a href="/password-reset" class="btn btn-outline-secondary ms-2">Reset Password</a>
                                             </div>
                                         </form>
                                     </div>
@@ -217,6 +216,8 @@
         <script src="/static/js/countdown.js"></script>
         <script src="/static/js/init.js"></script>
         <script src="/static/js/profile.js"></script>
+        <script src="/static/js/auth-buttons.js"></script>
+        <script src="/static/js/navigation.js"></script>
 
     </body>
 </html>

@@ -37,7 +37,7 @@ Bootstrap 5 Form Pack Template
                     <div class="row justify-content-between">
 
                         <div class="col-lg-12 col-12 d-flex align-items-center">
-                            <a class="site-header-text d-flex justify-content-center align-items-center me-auto" href="index.html">
+                            <a class="site-header-text d-flex justify-content-center align-items-center me-auto" href="/">
                                 <i class="bi-box"></i>
 
                                 <span>
@@ -67,6 +67,13 @@ Bootstrap 5 Form Pack Template
                                 </a>
                             </div>
 
+                            <div class="auth-buttons ms-3">
+                                <!-- Simple auth buttons without JavaScript -->
+                                <a href="/login" class="custom-btn custom-border-btn btn">
+                                    <i class="bi-box-arrow-in-right me-2"></i>Login
+                                </a>
+                            </div>
+
                             <a class="bi-list offcanvas-icon" data-bs-toggle="offcanvas" href="#offcanvasMenu" role="button" aria-controls="offcanvasMenu"></a>
 
                         </div>
@@ -84,12 +91,7 @@ Bootstrap 5 Form Pack Template
                 <div class="offcanvas-body d-flex flex-column justify-content-center align-items-center">
                     <nav>
                         <ul>
-                            <li><a href="/login">Login Form</a></li>
-                            <li><a href="/register">Create an account</a></li>
-                            <li><a href="/password-reset">Password Reset</a></li>
-                            <li><a href="/data-view">Data View</a></li>
-                            <li><a href="/contact">Contact Form</a></li>
-                            <li><a href="/404">404 Page</a></li>
+                            <!-- Navigation items will be populated by JavaScript -->
                         </ul>
                     </nav>
                 </div>
@@ -176,6 +178,8 @@ Bootstrap 5 Form Pack Template
         <script src="/static/js/bootstrap.bundle.min.js"></script>
         <script src="/static/js/countdown.js"></script>
         <script src="/static/js/init.js"></script>
+        <script src="/static/js/auth-buttons.js"></script>
+        <script src="/static/js/navigation.js"></script>
 
     </body>
 </html>

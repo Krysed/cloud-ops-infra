@@ -28,6 +28,11 @@ def get_user_by_email(email: str):
         cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
         return cursor.fetchone()
 
+def get_user_by_username(username: str):
+    with get_db_connection() as conn, conn.cursor() as cursor:
+        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+        return cursor.fetchone()
+
 def create_user(name: str, surname: str, username: str, email: str, hashed_password: str):
     with get_db_connection() as conn, conn.cursor() as cursor:
         cursor.execute("""

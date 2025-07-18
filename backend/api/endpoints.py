@@ -14,14 +14,15 @@ from core.db import (
     get_posting_by_id,
     get_postings_by_user,
     get_user_by_email,
+    get_user_by_username,
     update_posting_in_db,
     update_user_in_db,
 )
 from core.logger import logger
-from core.security import hash_password, login_user, logout_user
+from core.security import hash_password, login_user, logout_user, get_session_user
 from core.utility import json_serializer
-from fastapi import APIRouter, Form, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Form, HTTPException, Request
+from fastapi.responses import JSONResponse, RedirectResponse
 
 router = APIRouter()
 api_router = APIRouter(prefix="/api")
@@ -30,15 +31,36 @@ api_router = APIRouter(prefix="/api")
 async def health_check():
     return {"status": "healthy"}
 
-@api_router.post("/users")
-async def submit(name: str = Form(...), surname: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...)):
-    if get_user_by_email(email):
-        raise HTTPException(status_code=400, detail="User already exists")
-    user_id = create_user(name, surname, username, email, hashed_password=hash_password(password))
 
-    user_data = {"id": user_id, "name": name, "email": email}
-    get_redis_client().set(f"user:{user_id}", json.dumps(user_data))
-    return JSONResponse(content={"message": "Account created successfully", "user_id": user_id})
+@api_router.post("/users")
+async def create_user_account(name: str = Form(...), surname: str = Form(...), username: str = Form(...), email: str = Form(...), password: str = Form(...)):
+    try:
+        # Check if username and email are the same
+        if username.lower() == email.lower():
+            logger.info(f"Registration failed: Username and email cannot be the same - {username}")
+            return RedirectResponse(url="/register.html?error=username_email_same", status_code=303)
+        
+        # Check if email already exists
+        if get_user_by_email(email):
+            logger.info(f"Registration failed for {email}: Email already in use")
+            return RedirectResponse(url="/register.html?error=email_taken", status_code=303)
+        
+        # Check if username already exists
+        if get_user_by_username(username):
+            logger.info(f"Registration failed for {username}: Username already taken")
+            return RedirectResponse(url="/register.html?error=username_taken", status_code=303)
+        
+        user_id = create_user(name, surname, username, email, hashed_password=hash_password(password))
+        
+        user_data = {"id": user_id, "name": name, "email": email}
+        get_redis_client().set(f"user:{user_id}", json.dumps(user_data))
+        logger.info(f"Account created successfully for user: {email}")
+        return RedirectResponse(url="/login.html?success=account_created", status_code=303)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Account creation failed for {email}: {str(e)}")
+        return RedirectResponse(url="/register.html?error=server_error", status_code=303)
 
 @api_router.get("/users/{user_id}")
 async def get_user(user_id: int):
@@ -142,17 +164,124 @@ async def contact_form(full_name: str = Form(..., alias="full-name"), email: str
     return JSONResponse(content={"message": "Thank you for your message! We'll get back to you soon."})
 
 @api_router.post("/login")
-async def login(email: str = Form(...), password: str = Form(...)):
-    logger.info(f"Login attempt: {email}")
-    user_id = login_user(email, password)
-    if user_id is None:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    return JSONResponse(content={"message": "Login successful", "user_id": user_id})
+async def login(request: Request, email: str = Form(...), password: str = Form(...)):
+    try:
+        # Check if user is already logged in
+        session_token = request.cookies.get("session_token")
+        if session_token and get_session_user(session_token):
+            logger.info(f"User already logged in, redirecting to data view")
+            return RedirectResponse(url="/data-view.html", status_code=303)
+        
+        logger.info(f"Login attempt: {email}")
+        result = login_user(email, password)
+        if result is None:
+            logger.info(f"Login failed for {email}: Invalid credentials")
+            return RedirectResponse(url="/login.html?error=invalid_credentials", status_code=303)
+        
+        response = RedirectResponse(url="/data-view.html", status_code=303)
+        response.set_cookie(
+            key="session_token",
+            value=result["session_token"],
+            httponly=True,
+            secure=False,  # Set to True in production with HTTPS
+            samesite="lax",
+            max_age=604800  # 7 days
+        )
+        logger.info(f"Login successful for {email}")
+        return response
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error for {email}: {str(e)}")
+        return RedirectResponse(url="/login.html?error=server_error", status_code=303)
 
 @api_router.post("/logout")
-async def logout(user_id: int = Form(...)):
-    logger.info(f"Logout attempt for user_id: {user_id}")
-    success = logout_user(user_id)
-    if not success:
-        raise HTTPException(status_code=400, detail="Logout failed or user not logged in")
-    return JSONResponse(content={"message": "Logout successful"})
+async def logout(request: Request):
+    session_token = request.cookies.get("session_token")
+    logger.info(f"Logout attempt with session token: {session_token}")
+    success = logout_user(session_token)
+    
+    response = RedirectResponse(url="/index.html?success=logged_out", status_code=303)
+    response.delete_cookie("session_token")
+    return response
+
+@api_router.get("/auth/status")
+async def auth_status(request: Request):
+    session_token = request.cookies.get("session_token")
+    session_data = get_session_user(session_token)
+    
+    if session_data:
+        return JSONResponse(content={
+            "authenticated": True,
+            "user_id": session_data["user_id"]
+        })
+    else:
+        return JSONResponse(content={"authenticated": False})
+
+@api_router.get("/auth/buttons")
+async def auth_buttons(request: Request):
+    session_token = request.cookies.get("session_token")
+    session_data = get_session_user(session_token)
+    
+    if session_data:
+        return JSONResponse(content={
+            "authenticated": True,
+            "action": "logout",
+            "method": "POST",
+            "url": "/api/logout",
+            "text": "Logout",
+            "icon": "bi-box-arrow-right"
+        })
+    else:
+        return JSONResponse(content={
+            "authenticated": False,
+            "action": "login",
+            "method": "GET",
+            "url": "/login.html",
+            "text": "Login",
+            "icon": "bi-box-arrow-in-right"
+        })
+
+# Authentication-aware redirects
+@router.get("/")
+async def root(request: Request):
+    session_token = request.cookies.get("session_token")
+    if session_token and get_session_user(session_token):
+        return RedirectResponse(url="/data-view.html", status_code=302)
+    return RedirectResponse(url="/index.html", status_code=302)
+
+@router.get("/login")
+async def login_redirect(request: Request):
+    session_token = request.cookies.get("session_token")
+    if session_token and get_session_user(session_token):
+        return RedirectResponse(url="/data-view.html", status_code=302)
+    return RedirectResponse(url="/login.html", status_code=302)
+
+@router.get("/register")
+async def register_redirect(request: Request):
+    session_token = request.cookies.get("session_token")
+    if session_token and get_session_user(session_token):
+        return RedirectResponse(url="/data-view.html", status_code=302)
+    return RedirectResponse(url="/register.html", status_code=302)
+
+@router.get("/data-view")
+async def data_view_redirect(request: Request):
+    session_token = request.cookies.get("session_token")
+    if not session_token or not get_session_user(session_token):
+        return RedirectResponse(url="/login.html", status_code=302)
+    return RedirectResponse(url="/data-view.html", status_code=302)
+
+@router.get("/profile")
+async def profile_redirect(request: Request):
+    session_token = request.cookies.get("session_token")
+    if not session_token or not get_session_user(session_token):
+        return RedirectResponse(url="/login.html", status_code=302)
+    return RedirectResponse(url="/profile.html", status_code=302)
+
+@router.get("/contact")
+async def contact_redirect():
+    return RedirectResponse(url="/contact.html", status_code=302)
+
+@router.get("/password-reset")
+async def password_reset_redirect():
+    return RedirectResponse(url="/password-reset.html", status_code=302)

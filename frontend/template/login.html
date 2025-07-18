@@ -16,6 +16,24 @@
         <link href="/static/css/bootstrap.min.css" rel="stylesheet">
         <link href="/static/css/bootstrap-icons.css" rel="stylesheet">
         <link href="/static/css/tooplate-kool-form-pack.css" rel="stylesheet">
+        <style>
+            .alert {
+                padding: 15px;
+                margin-bottom: 20px;
+                border: 1px solid transparent;
+                border-radius: 4px;
+            }
+            .alert-danger {
+                color: #721c24;
+                background-color: #f8d7da;
+                border-color: #f5c6cb;
+            }
+            .alert-success {
+                color: #155724;
+                background-color: #d4edda;
+                border-color: #c3e6cb;
+            }
+        </style>
 <!--
 
 Tooplate 2136 Kool Form Pack
@@ -36,7 +54,7 @@ Bootstrap 5 Form Pack Template
                     <div class="row justify-content-between">
 
                         <div class="col-lg-12 col-12 d-flex">
-                            <a class="site-header-text d-flex justify-content-center align-items-center me-auto" href="index.html">
+                            <a class="site-header-text d-flex justify-content-center align-items-center me-auto" href="/">
                                 <i class="bi-box"></i>
 
                                 <span>
@@ -66,6 +84,10 @@ Bootstrap 5 Form Pack Template
                                 </a>
                             </div>
 
+                            <div class="auth-buttons ms-3">
+                                <!-- Auth buttons will be populated by JavaScript -->
+                            </div>
+
                             <a class="bi-list offcanvas-icon" data-bs-toggle="offcanvas" href="#offcanvasMenu" role="button" aria-controls="offcanvasMenu"></a>
 
                         </div>
@@ -83,13 +105,7 @@ Bootstrap 5 Form Pack Template
                 <div class="offcanvas-body d-flex flex-column justify-content-center align-items-center">
                     <nav>
                         <ul>
-                            <li><a class="active" href="/login">Login Form</a></li>
-                            <li><a href="/register">Create an account</a></li>
-                            <li><a href="/password-reset">Password Reset</a></li>
-                            <li><a href="/data-view">Data View</a></li>
-                            <li><a href="/contact">Contact Form</a></li>
-                            <li><a href="/profile">User Profile</a></li>
-                            <li><a href="/404">404 Page</a></li>
+                            <!-- Navigation items will be populated by JavaScript -->
                         </ul>
                     </nav>
                 </div>
@@ -130,6 +146,24 @@ Bootstrap 5 Form Pack Template
                         <div class="col-lg-5 col-12 mx-auto">
                             <form class="custom-form login-form" role="form" method="post" action="/api/login">
                                 <h2 class="hero-title text-center mb-4 pb-2">Login Form</h2>
+                                
+                                <!-- Success/Error Messages -->
+                                <div id="messages">
+                                    <script>
+                                        // Show messages based on URL parameters
+                                        const urlParams = new URLSearchParams(window.location.search);
+                                        const error = urlParams.get('error');
+                                        const success = urlParams.get('success');
+                                        
+                                        if (error === 'invalid_credentials') {
+                                            document.getElementById('messages').innerHTML = '<div class="alert alert-danger">Invalid email or password. Please try again.</div>';
+                                        } else if (error === 'server_error') {
+                                            document.getElementById('messages').innerHTML = '<div class="alert alert-danger">Server error. Please try again later.</div>';
+                                        } else if (success === 'account_created') {
+                                            document.getElementById('messages').innerHTML = '<div class="alert alert-success">Account created successfully! Please login below.</div>';
+                                        }
+                                    </script>
+                                </div>
 
                                 <div class="form-floating mb-4 p-0">
                                     <input type="email" name="email" id="email" pattern="[^ @]*@[^ @]*" class="form-control" placeholder="Email address" required="">
@@ -143,12 +177,16 @@ Bootstrap 5 Form Pack Template
                                     <label for="password">Password</label>
                                 </div>
 
-                                <div class="form-check mb-4">
-                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
-                                  
-                                    <label class="form-check-label" for="flexCheckDefault">
-                                        Remember me
-                                    </label>
+                                <div class="form-check mb-4 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            Remember me
+                                        </label>
+                                    </div>
+                                    <div>
+                                        <a href="/password-reset" class="btn btn-link btn-sm text-decoration-none">Reset Password</a>
+                                    </div>
                                 </div>
 
                                 <div class="row justify-content-center align-items-center">
@@ -157,7 +195,7 @@ Bootstrap 5 Form Pack Template
                                     </div>
 
                                     <div class="col-lg-5 col-12">
-                                        <a href="register.html" class="btn custom-btn custom-border-btn">Register</a>
+                                        <a href="/register" class="btn custom-btn custom-border-btn">Register</a>
                                     </div>
                                 </div>
 
@@ -182,7 +220,8 @@ Bootstrap 5 Form Pack Template
         <script src="/static/js/bootstrap.bundle.min.js"></script>
         <script src="/static/js/countdown.js"></script>
         <script src="/static/js/init.js"></script>
-        <script src="/static/js/login.js"></script>
+        <script src="/static/js/auth-buttons.js"></script>
+        <script src="/static/js/navigation.js"></script>
 
     </body>
 </html>
