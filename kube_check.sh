@@ -47,7 +47,7 @@ build_images() {
     echo -e "${BLUE}Building Docker images in minikube...${NC}"
     
     # Set docker env to minikube
-    eval $(minikube docker-env)
+    eval "$(minikube docker-env)"
     
     # Build all images
     echo -e "${YELLOW}Building backend image...${NC}"
