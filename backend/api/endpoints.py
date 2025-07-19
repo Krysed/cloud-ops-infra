@@ -10,11 +10,18 @@ from core.db import (
     get_all_postings,
     get_applications_by_posting,
     get_applications_by_user,
-    get_db_connection,
+    get_application_details,
+    get_posting_analytics,
     get_posting_by_id,
+    get_posting_with_public_stats,
     get_postings_by_user,
+    get_public_postings,
     get_user_by_email,
+    get_user_by_id,
     get_user_by_username,
+    get_user_posting_stats,
+    track_posting_view,
+    update_application_status,
     update_posting_in_db,
     update_user_in_db,
 )
@@ -69,14 +76,12 @@ async def get_user(user_id: int):
     if cached:
         return json.loads(cached)
 
-    with get_db_connection() as conn, conn.cursor() as cursor:
-        cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-        user = cursor.fetchone()
-        if user:
-            cache.set(f"user:{user_id}", json.dumps(user, default=json_serializer))
-            return user
-        else:
-            raise HTTPException(status_code=404, detail="User not found")
+    user = get_user_by_id(user_id)
+    if user:
+        cache.set(f"user:{user_id}", json.dumps(user, default=json_serializer))
+        return user
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
 
 @api_router.put("/users/{user_id}")
 async def update_user(
@@ -144,8 +149,20 @@ async def api_get_postings_by_user(user_id: int):
     return get_postings_by_user(user_id)
 
 @api_router.post("/applications")
-async def apply(user_id: int = Form(...), posting_id: int = Form(...)):
-    success = apply_to_posting(user_id, posting_id)
+async def apply(
+    request: Request,
+    posting_id: int = Form(...), 
+    message: str = Form(None), 
+    cover_letter: str = Form(None)
+):
+    session_token = request.cookies.get("session_token")
+    session_data = get_session_user(session_token)
+    
+    if not session_data:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    user_id = session_data["user_id"]
+    success = apply_to_posting(user_id, posting_id, message, cover_letter)
     if not success:
         raise HTTPException(status_code=400, detail="Application failed (already applied or posting not found)")
     return {"message": "Application submitted successfully"}
@@ -157,6 +174,133 @@ async def api_get_applications_by_user(user_id: int):
 @api_router.get("/applications/by_posting/{posting_id}")
 async def api_get_applications_by_posting(posting_id: int):
     return get_applications_by_posting(posting_id)
+
+@api_router.get("/postings/public")
+async def get_public_postings_endpoint():
+    """Get all active postings with limited public information"""
+    return get_public_postings()
+
+@api_router.get("/postings/{posting_id}/view")
+async def view_posting(posting_id: int, request: Request):
+    """View a posting and track the view"""
+    session_token = request.cookies.get("session_token")
+    session_data = get_session_user(session_token)
+    
+    user_id = session_data["user_id"] if session_data else None
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    
+    # Track the view
+    track_posting_view(posting_id, user_id, ip_address, user_agent, session_token)
+    
+    # Get posting with public stats
+    posting = get_posting_with_public_stats(posting_id)
+    if not posting:
+        raise HTTPException(status_code=404, detail="Posting not found")
+    
+    return posting
+
+@api_router.get("/postings/my-postings")
+async def get_my_postings(request: Request):
+    """Get current user's postings"""
+    session_token = request.cookies.get("session_token")
+    session_data = get_session_user(session_token)
+    
+    if not session_data:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    user_id = session_data["user_id"]
+    return get_postings_by_user(user_id)
+
+@api_router.get("/postings/{posting_id}/analytics")
+async def get_posting_analytics_endpoint(posting_id: int, request: Request):
+    """Get comprehensive analytics for a posting (owner only)"""
+    session_token = request.cookies.get("session_token")
+    session_data = get_session_user(session_token)
+    
+    if not session_data:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    user_id = session_data["user_id"]
+    analytics = get_posting_analytics(posting_id, user_id)
+    
+    if not analytics:
+        raise HTTPException(status_code=404, detail="Posting not found or access denied")
+    
+    return analytics
+
+@api_router.get("/dashboard/stats")
+async def get_dashboard_stats(request: Request):
+    """Get dashboard statistics for current user"""
+    session_token = request.cookies.get("session_token")
+    session_data = get_session_user(session_token)
+    
+    if not session_data:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    user_id = session_data["user_id"]
+    return get_user_posting_stats(user_id)
+
+@api_router.get("/applications/my-applications")
+async def get_my_applications(request: Request):
+    """Get current user's applications"""
+    session_token = request.cookies.get("session_token")
+    session_data = get_session_user(session_token)
+    
+    if not session_data:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    user_id = session_data["user_id"]
+    return get_applications_by_user(user_id)
+
+@api_router.get("/applications/{application_id}")
+async def get_application_details_endpoint(application_id: int, request: Request):
+    """Get application details (for owner or applicant)"""
+    session_token = request.cookies.get("session_token")
+    session_data = get_session_user(session_token)
+    
+    if not session_data:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    user_id = session_data["user_id"]
+    application = get_application_details(application_id, user_id)
+    
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found or access denied")
+    
+    return application
+
+@api_router.post("/applications/{application_id}/review")
+async def review_application(
+    application_id: int,
+    request: Request,
+    status: str = Form(...),
+    reviewer_notes: str = Form(None)
+):
+    """Review an application (posting owner only)"""
+    session_token = request.cookies.get("session_token")
+    session_data = get_session_user(session_token)
+    
+    if not session_data:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    user_id = session_data["user_id"]
+    
+    # Verify that the user owns the posting for this application
+    application = get_application_details(application_id, user_id)
+    if not application or application["posting_owner_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Validate status
+    valid_statuses = ["pending", "reviewed", "accepted", "rejected"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    success = update_application_status(application_id, status, reviewer_notes)
+    if not success:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    return {"message": "Application status updated successfully"}
 
 @api_router.post("/contact")
 async def contact_form(full_name: str = Form(..., alias="full-name"), email: str = Form(...), message: str = Form(...)):
