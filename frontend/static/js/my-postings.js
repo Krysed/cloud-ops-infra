@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardStats();
     loadMyPostings();
 });
 
@@ -45,4 +46,34 @@ function displayPostings(postings) {
     });
     
     tbody.innerHTML = html;
+}
+
+async function loadDashboardStats() {
+    try {
+        const response = await fetch('/api/dashboard/stats', {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        displayDashboardStats(data);
+    } catch (error) {
+        // Keep default "-" values if stats fail to load
+        console.error('Failed to load dashboard stats:', error);
+    }
+}
+
+function displayDashboardStats(data) {
+    if (data.overview) {
+        const overview = data.overview;
+        
+        // Update stats cards with backend data
+        document.getElementById('total-postings').textContent = overview.total_postings || 0;
+        document.getElementById('total-views').textContent = overview.total_views || 0;
+        document.getElementById('total-applications').textContent = overview.total_applications || 0;
+        
+        // Calculate average applications per posting
+        const avgApplications = overview.total_postings > 0 
+            ? Math.round((overview.total_applications || 0) / overview.total_postings * 10) / 10
+            : 0;
+        document.getElementById('avg-applications').textContent = avgApplications;
+    }
 }
