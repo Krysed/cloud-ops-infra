@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Posting Details</title>
+
+    <!-- Fonts and CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,200;0,400;0,700;1,200&family=Unbounded:wght@400;700&display=swap" rel="stylesheet"/>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/static/css/bootstrap-icons.css" rel="stylesheet" />
+    <link href="/static/css/tooplate-kool-form-pack.css" rel="stylesheet" />
+  </head>
+
+  <body>
+    <main>
+      <!-- Header with Sidebar Trigger -->
+      <header class="site-header">
+        <div class="container">
+          <div class="row justify-content-between">
+            <div class="col-lg-12 col-12 d-flex">
+              <a class="site-header-text d-flex justify-content-center align-items-center me-auto" href="/">
+                <i class="bi-box"></i>
+                <span>Kool Form Pack</span>
+              </a>
+
+              <ul class="social-icon d-flex justify-content-center align-items-center mx-auto">
+                <span class="text-white me-4 d-none d-lg-block">Stay connected</span>
+                <li class="social-icon-item"><a href="#" class="social-icon-link bi-instagram"></a></li>
+                <li class="social-icon-item"><a href="#" class="social-icon-link bi-twitter"></a></li>
+                <li class="social-icon-item"><a href="#" class="social-icon-link bi-whatsapp"></a></li>
+              </ul>
+
+              <div>
+                <a href="/data-view.html" class="custom-btn custom-border-btn btn">
+                  <i class="bi-arrow-left me-2"></i>Back to Postings
+                </a>
+              </div>
+
+              <div class="auth-buttons ms-3">
+                <!-- Auth buttons will be populated by backend -->
+              </div>
+
+              <a class="bi-list offcanvas-icon" data-bs-toggle="offcanvas" href="#offcanvasMenu" role="button" aria-controls="offcanvasMenu"></a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Offcanvas Sidebar -->
+      <div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="offcanvasMenu" aria-labelledby="offcanvasMenuLabel">
+        <div class="offcanvas-header">
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column justify-content-center align-items-center">
+          <nav>
+            <ul>
+              <!-- Navigation items will be populated by JavaScript -->
+            </ul>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Posting Detail Section -->
+      <section class="hero-section d-flex justify-content-center align-items-center">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-10 col-12 mx-auto">
+              <div class="bg-white p-5 rounded shadow-lg">
+                
+                <!-- Alert Messages -->
+                <div id="alert-container"></div>
+                
+                <!-- Loading State -->
+                <div id="loading-container" class="text-center">
+                  <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <p class="mt-2">Loading posting details...</p>
+                </div>
+
+                <!-- Posting Content -->
+                <div id="posting-content" style="display: none;">
+                  <!-- Header -->
+                  <div class="row mb-4">
+                    <div class="col-md-8">
+                      <h1 id="posting-title" class="h2 mb-2"></h1>
+                      <p class="text-muted mb-1">
+                        <span class="badge bg-secondary me-2" id="posting-category"></span>
+                        <i class="bi bi-calendar me-1"></i><span id="posting-date"></span>
+                      </p>
+                      <p class="text-muted">
+                        <i class="bi bi-person me-1"></i>Posted by <span id="posting-author"></span>
+                      </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                      <div class="mb-2">
+                        <small class="text-muted">
+                          <i class="bi bi-eye me-1"></i><span id="posting-views"></span> views •
+                          <i class="bi bi-people ms-2 me-1"></i><span id="posting-applications"></span> applications
+                        </small>
+                      </div>
+                      <!-- Action buttons will be populated here -->
+                      <div id="action-buttons"></div>
+                    </div>
+                  </div>
+
+                  <!-- Job Description -->
+                  <div class="row">
+                    <div class="col-12">
+                      <h3>Job Description</h3>
+                      <div class="border-start border-primary border-4 ps-3 mb-4">
+                        <div id="posting-description"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Application Form (Hidden by default) -->
+                  <div id="application-form" class="mt-4" style="display: none;">
+                    <hr>
+                    <h3>Apply for this Position</h3>
+                    <form id="apply-form">
+                      <div class="row">
+                        <div class="col-12">
+                          <label for="application-message" class="form-label">Cover Message (Optional)</label>
+                          <textarea class="form-control" id="application-message" name="message" rows="4" placeholder="Tell the employer why you're interested in this position..."></textarea>
+                        </div>
+                      </div>
+                      <div class="row mt-3">
+                        <div class="col-12">
+                          <label for="cover-letter" class="form-label">Cover Letter (Optional)</label>
+                          <textarea class="form-control" id="cover-letter" name="cover_letter" rows="6" placeholder="Provide additional details about your qualifications and experience..."></textarea>
+                        </div>
+                      </div>
+                      <div class="row mt-4">
+                        <div class="col-md-6">
+                          <button type="button" class="btn btn-secondary w-100" onclick="hideApplicationForm()">
+                            Cancel
+                          </button>
+                        </div>
+                        <div class="col-md-6">
+                          <button type="submit" class="btn btn-primary w-100">
+                            Submit Application
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Background Video -->
+        <div class="video-wrap">
+          <video autoplay loop muted class="custom-video" poster="">
+            <source src="/static/videos/video.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      </section>
+    </main>
+
+    <!-- JS -->
+    <script src="/static/js/jquery.min.js"></script>
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/countdown.js"></script>
+    <script src="/static/js/init.js"></script>
+    <script src="/static/js/posting-detail.js"></script>
+    <script src="/static/js/auth-buttons.js"></script>
+    <script src="/static/js/navigation.js"></script>
+  </body>
+</html>
