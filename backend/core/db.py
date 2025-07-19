@@ -1,5 +1,7 @@
 from contextlib import contextmanager
 from datetime import UTC, datetime
+import secrets
+import string
 
 import psycopg2
 import psycopg2.extras
@@ -22,6 +24,17 @@ def get_db_connection():
         yield conn
     finally:
         conn.close()
+
+def generate_unique_hash(length: int = 12) -> str:
+    """Generate a unique hash for posting URLs"""
+    alphabet = string.ascii_lowercase + string.digits
+    while True:
+        hash_value = ''.join(secrets.choice(alphabet) for _ in range(length))
+        # Check if hash already exists
+        with get_db_connection() as conn, conn.cursor() as cursor:
+            cursor.execute("SELECT 1 FROM postings WHERE hash = %s", (hash_value,))
+            if cursor.fetchone() is None:
+                return hash_value
 
 def get_user_by_email(email: str):
     with get_db_connection() as conn, conn.cursor() as cursor:
@@ -76,20 +89,22 @@ def delete_user_from_db(user_id: int) -> bool:
         get_redis_client().delete(f"user:{user_id}")
         return True
 
-def create_posting_in_db(title: str, post_description: str, category: str, user_id: int) -> int:
+def create_posting_in_db(title: str, post_description: str, category: str, user_id: int) -> str:
+    """Create a posting and return its hash"""
+    hash_value = generate_unique_hash()
     with get_db_connection() as conn, conn.cursor() as cursor:
         cursor.execute(
             """
-            INSERT INTO postings (title, post_description, category, user_id)
-            VALUES (%s, %s, %s, %s) RETURNING id
+            INSERT INTO postings (title, post_description, category, user_id, hash)
+            VALUES (%s, %s, %s, %s, %s) RETURNING hash
             """,
-            (title, post_description, category, user_id)
+            (title, post_description, category, user_id, hash_value)
         )
         row = cursor.fetchone()
         if row is None:
-            raise ValueError("Insert failed: no ID returned from insert statement.")
+            raise ValueError("Insert failed: no hash returned from insert statement.")
         conn.commit()
-        return row["id"] # posting id
+        return row["hash"] # posting hash
 
 def update_posting_in_db(posting_id: int, title: str = None, category: str = None, post_description: str = None, status: str = None) -> bool:
     with get_db_connection() as conn, conn.cursor() as cursor:
@@ -130,16 +145,46 @@ def get_posting_by_id(posting_id):
         cursor.execute("SELECT * FROM postings WHERE id = %s", (posting_id,))
         return cursor.fetchone()
 
+def get_posting_by_hash(posting_hash: str):
+    """Get posting by hash instead of ID"""
+    with get_db_connection() as conn, conn.cursor() as cursor:
+        cursor.execute("SELECT * FROM postings WHERE hash = %s", (posting_hash,))
+        return cursor.fetchone()
+
 def get_postings_by_user(user_id):
     with get_db_connection() as conn, conn.cursor() as cursor:
-        cursor.execute("SELECT * FROM postings WHERE user_id = %s", (user_id,))
+        cursor.execute("""
+            SELECT 
+                p.id,
+                p.user_id,
+                p.hash,
+                p.title,
+                p.post_description,
+                p.category,
+                p.views,
+                p.created_at,
+                p.updated_at,
+                p.status,
+                COUNT(DISTINCT a.id) as applications_count
+            FROM postings p
+            LEFT JOIN applications a ON p.id = a.posting_id
+            WHERE p.user_id = %s
+            GROUP BY p.id
+            ORDER BY p.created_at DESC
+        """, (user_id,))
         return cursor.fetchall()
 
-def apply_to_posting(user_id: int, posting_id: int, message: str = None, cover_letter: str = None) -> bool:
+def apply_to_posting(user_id: int, posting_id: int, message: str = None, cover_letter: str = None) -> dict:
     with get_db_connection() as conn, conn.cursor() as cursor:
-        cursor.execute("SELECT id FROM postings WHERE id = %s", (posting_id,))
-        if not cursor.fetchone():
-            return False
+        # Check if posting exists and get the posting owner
+        cursor.execute("SELECT id, user_id FROM postings WHERE id = %s", (posting_id,))
+        posting_data = cursor.fetchone()
+        if not posting_data:
+            return {"success": False, "error": "posting_not_found"}
+        
+        # Prevent posting creators from applying to their own posts
+        if posting_data['user_id'] == user_id:
+            return {"success": False, "error": "cannot_apply_own_posting"}
 
         # check if applied already
         cursor.execute(
@@ -148,7 +193,7 @@ def apply_to_posting(user_id: int, posting_id: int, message: str = None, cover_l
         )
 
         if cursor.fetchone():
-            return False
+            return {"success": False, "error": "already_applied"}
 
         cursor.execute(
             "INSERT INTO applications (user_id, posting_id, message, cover_letter) VALUES (%s, %s, %s, %s)",
@@ -167,7 +212,7 @@ def apply_to_posting(user_id: int, posting_id: int, message: str = None, cover_l
         """, (posting_id, today))
         
         conn.commit()
-        return True
+        return {"success": True}
 
 def get_applications_by_user(user_id):
     with get_db_connection() as conn, conn.cursor() as cursor:
@@ -397,6 +442,8 @@ def get_public_postings():
         cursor.execute("""
             SELECT 
                 p.id,
+                p.user_id,
+                p.hash,
                 p.title,
                 p.post_description,
                 p.category,
@@ -405,12 +452,12 @@ def get_public_postings():
                 p.status,
                 u.name as creator_name,
                 u.username as creator_username,
-                COUNT(DISTINCT a.id) as application_count
+                COUNT(DISTINCT a.id) as applications_count
             FROM postings p
             JOIN users u ON p.user_id = u.id
             LEFT JOIN applications a ON p.id = a.posting_id
             WHERE p.status = 'active'
-            GROUP BY p.id, u.name, u.username
+            GROUP BY p.id, p.user_id, u.name, u.username
             ORDER BY p.created_at DESC
         """)
         return cursor.fetchall()
