@@ -5,6 +5,7 @@ in the endpoints without testing the HTTP layer directly.
 """
 
 import asyncio
+import json
 import os
 import sys
 from unittest.mock import MagicMock, patch
@@ -953,3 +954,1569 @@ class TestViewTrackingBusinessLogic:
         assert result["title"] == "Software Engineer"
         assert result["views"] == 150
         assert result["application_count"] == 8
+
+
+class TestBasicEndpoints:
+    """Test basic endpoints that are missing coverage"""
+    
+    def test_health_check(self):
+        """Test health check endpoint"""
+        import asyncio
+
+        from backend.api.endpoints import health_check
+        
+        result = asyncio.run(health_check())
+        assert result == {"status": "healthy"}
+
+
+class TestUserManagementEndpoints:
+    """Test user management HTTP endpoints"""
+    
+    @patch('backend.api.endpoints.get_redis_client')
+    @patch('backend.api.endpoints.create_user')
+    @patch('backend.api.endpoints.get_user_by_username')
+    @patch('backend.api.endpoints.get_user_by_email')
+    @patch('backend.api.endpoints.hash_password')
+    def test_create_user_account_success(self, mock_hash_password, mock_get_by_email, mock_get_by_username, mock_create_user, mock_redis):
+        """Test successful user account creation"""
+        import asyncio
+
+        from backend.api.endpoints import create_user_account
+        
+        # Mock dependencies
+        mock_hash_password.return_value = "hashed_password"
+        mock_get_by_email.return_value = None  # Email not taken
+        mock_get_by_username.return_value = None  # Username not taken
+        mock_create_user.return_value = 42
+        mock_redis.return_value.set.return_value = None
+        
+        result = asyncio.run(create_user_account("John", "Doe", "johndoe", "john@example.com", "Password123!"))
+        
+        assert result.status_code == 303
+        assert "/login.html?success=account_created" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_user_by_email')
+    def test_create_user_account_email_taken(self, mock_get_by_email):
+        """Test user creation with taken email"""
+        import asyncio
+
+        from backend.api.endpoints import create_user_account
+        
+        mock_get_by_email.return_value = {"id": 1, "email": "john@example.com"}
+        
+        result = asyncio.run(create_user_account("John", "Doe", "johndoe", "john@example.com", "Password123!"))
+        
+        assert result.status_code == 303
+        assert "/register.html?error=email_taken" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_user_by_username')
+    @patch('backend.api.endpoints.get_user_by_email')
+    def test_create_user_account_username_taken(self, mock_get_by_email, mock_get_by_username):
+        """Test user creation with taken username"""
+        import asyncio
+
+        from backend.api.endpoints import create_user_account
+        
+        mock_get_by_email.return_value = None
+        mock_get_by_username.return_value = {"id": 1, "username": "johndoe"}
+        
+        result = asyncio.run(create_user_account("John", "Doe", "johndoe", "john@example.com", "Password123!"))
+        
+        assert result.status_code == 303
+        assert "/register.html?error=username_taken" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_user_by_username')
+    @patch('backend.api.endpoints.get_user_by_email')
+    def test_create_user_account_username_email_same(self, mock_get_by_email, mock_get_by_username):
+        """Test user creation with username same as email"""
+        import asyncio
+
+        from backend.api.endpoints import create_user_account
+        
+        result = asyncio.run(create_user_account("John", "Doe", "john@example.com", "john@example.com", "Password123!"))
+        
+        assert result.status_code == 303
+        assert "/register.html?error=username_email_same" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_redis_client')
+    @patch('backend.api.endpoints.get_user_by_id')
+    def test_get_user_success(self, mock_get_user, mock_redis):
+        """Test successful user retrieval"""
+        import asyncio
+
+        from backend.api.endpoints import get_user
+        
+        mock_redis.return_value.get.return_value = None  # No cache
+        mock_get_user.return_value = {"id": 42, "name": "John", "email": "john@example.com"}
+        mock_redis.return_value.set.return_value = None
+        
+        result = asyncio.run(get_user(42))
+        
+        assert result["id"] == 42
+        assert result["name"] == "John"
+    
+    @patch('backend.api.endpoints.get_redis_client')
+    def test_get_user_cached(self, mock_redis):
+        """Test user retrieval from cache"""
+        import asyncio
+        import json
+
+        from backend.api.endpoints import get_user
+        
+        cached_data = {"id": 42, "name": "John", "email": "john@example.com"}
+        mock_redis.return_value.get.return_value = json.dumps(cached_data)
+        
+        result = asyncio.run(get_user(42))
+        
+        assert result["id"] == 42
+        assert result["name"] == "John"
+    
+    @patch('backend.api.endpoints.get_redis_client')
+    @patch('backend.api.endpoints.get_user_by_id')
+    def test_get_user_not_found(self, mock_get_user, mock_redis):
+        """Test user not found"""
+        import asyncio
+
+        from fastapi import HTTPException
+
+        from backend.api.endpoints import get_user
+        
+        mock_redis.return_value.get.return_value = None
+        mock_get_user.return_value = None
+        
+        try:
+            asyncio.run(get_user(999))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 404
+            assert e.detail == "User not found"
+    
+    @patch('backend.api.endpoints.update_user_in_db')
+    def test_update_user_success(self, mock_update_user):
+        """Test successful user update"""
+        import asyncio
+
+        from backend.api.endpoints import update_user
+        
+        mock_update_user.return_value = True
+        
+        result = asyncio.run(update_user(42, name="John", surname="Doe", username="johndoe", email="john@example.com"))
+        
+        assert result.status_code == 200
+    
+    @patch('backend.api.endpoints.update_user_in_db')
+    def test_update_user_not_found(self, mock_update_user):
+        """Test user update when user not found"""
+        import asyncio
+
+        from fastapi import HTTPException
+
+        from backend.api.endpoints import update_user
+        
+        mock_update_user.return_value = False
+        
+        try:
+            asyncio.run(update_user(999, name="John"))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 404
+            assert e.detail == "User not found"
+    
+    @patch('backend.api.endpoints.delete_user_from_db')
+    def test_delete_user_success(self, mock_delete_user):
+        """Test successful user deletion"""
+        import asyncio
+
+        from backend.api.endpoints import delete_user
+        
+        mock_delete_user.return_value = True
+        
+        result = asyncio.run(delete_user(42))
+        
+        assert result.status_code == 200
+    
+    @patch('backend.api.endpoints.delete_user_from_db')
+    def test_delete_user_not_found(self, mock_delete_user):
+        """Test user deletion when user not found"""
+        import asyncio
+
+        from fastapi import HTTPException
+
+        from backend.api.endpoints import delete_user
+        
+        mock_delete_user.return_value = False
+        
+        try:
+            asyncio.run(delete_user(999))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 404
+            assert e.detail == "User not found"
+
+
+class TestPostingManagementEndpoints:
+    """Test posting management HTTP endpoints"""
+    
+    @patch('backend.api.endpoints.create_posting_in_db')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_create_posting_success(self, mock_get_session, mock_create_posting):
+        """Test successful posting creation"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import create_posting
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_create_posting.return_value = "abc123hash"
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(create_posting(mock_request, "Software Engineer", "Looking for developer", "technology"))
+        
+        assert result.status_code == 303
+        assert "/my-postings.html?success=posting_created" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_create_posting_unauthenticated(self, mock_get_session):
+        """Test posting creation without authentication"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import create_posting
+        
+        mock_get_session.return_value = None
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "invalid_token"
+        
+        result = asyncio.run(create_posting(mock_request, "Software Engineer", "Looking for developer", "technology"))
+        
+        assert result.status_code == 303
+        assert "/login.html?error=auth_required" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.update_posting_in_db')
+    def test_update_posting_success(self, mock_update_posting):
+        """Test successful posting update"""
+        import asyncio
+
+        from backend.api.endpoints import update_posting
+        
+        mock_update_posting.return_value = True
+        
+        result = asyncio.run(update_posting(posting_id=1, title="New Title", category="tech", post_description="New description", status="active"))
+        
+        assert result.status_code == 200
+    
+    @patch('backend.api.endpoints.update_posting_in_db')
+    def test_update_posting_not_found(self, mock_update_posting):
+        """Test posting update when posting not found"""
+        import asyncio
+
+        from fastapi import HTTPException
+
+        from backend.api.endpoints import update_posting
+        
+        mock_update_posting.return_value = False
+        
+        try:
+            asyncio.run(update_posting(posting_id=999, title="New Title"))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 404
+            assert e.detail == "Posting not found"
+    
+    @patch('backend.api.endpoints.delete_posting_from_db')
+    def test_delete_posting_success(self, mock_delete_posting):
+        """Test successful posting deletion"""
+        import asyncio
+
+        from backend.api.endpoints import delete_posting
+        
+        mock_delete_posting.return_value = True
+        
+        result = asyncio.run(delete_posting(posting_id=1))
+        
+        assert result.status_code == 200
+    
+    @patch('backend.api.endpoints.delete_posting_from_db')
+    def test_delete_posting_not_found(self, mock_delete_posting):
+        """Test posting deletion when posting not found"""
+        import asyncio
+
+        from fastapi import HTTPException
+
+        from backend.api.endpoints import delete_posting
+        
+        mock_delete_posting.return_value = False
+        
+        try:
+            asyncio.run(delete_posting(posting_id=999))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 404
+            assert e.detail == "Posting not found"
+    
+    @patch('backend.api.endpoints.get_all_postings')
+    def test_api_get_all_postings(self, mock_get_all):
+        """Test getting all postings API"""
+        import asyncio
+
+        from backend.api.endpoints import api_get_all_postings
+        
+        mock_get_all.return_value = [
+            {"id": 1, "title": "Job 1"},
+            {"id": 2, "title": "Job 2"}
+        ]
+        
+        result = asyncio.run(api_get_all_postings())
+        
+        assert len(result) == 2
+        assert result[0]["title"] == "Job 1"
+    
+    @patch('backend.api.endpoints.get_public_postings')
+    def test_get_public_postings_endpoint_success(self, mock_get_public):
+        """Test successful public postings retrieval"""
+        import asyncio
+
+        from backend.api.endpoints import get_public_postings_endpoint
+        
+        mock_get_public.return_value = [
+            {"id": 1, "title": "Job 1", "status": "active"},
+            {"id": 2, "title": "Job 2", "status": "active"}
+        ]
+        
+        result = asyncio.run(get_public_postings_endpoint())
+        
+        assert len(result) == 2
+        assert result[0]["status"] == "active"
+    
+    @patch('backend.api.endpoints.get_public_postings')
+    def test_get_public_postings_endpoint_error(self, mock_get_public):
+        """Test public postings retrieval with error"""
+        import asyncio
+
+        from fastapi import HTTPException
+
+        from backend.api.endpoints import get_public_postings_endpoint
+        
+        mock_get_public.side_effect = Exception("Database error")
+        
+        try:
+            asyncio.run(get_public_postings_endpoint())
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 500
+            assert e.detail == "Failed to fetch postings"
+    
+    @patch('backend.api.endpoints.get_postings_by_user')
+    def test_api_get_postings_by_user(self, mock_get_by_user):
+        """Test getting postings by user API"""
+        import asyncio
+
+        from backend.api.endpoints import api_get_postings_by_user
+        
+        mock_get_by_user.return_value = [
+            {"id": 1, "title": "Job 1", "user_id": 42}
+        ]
+        
+        result = asyncio.run(api_get_postings_by_user(42))
+        
+        assert len(result) == 1
+        assert result[0]["user_id"] == 42
+    
+    @patch('backend.api.endpoints.get_posting_by_hash')
+    @patch('backend.api.endpoints.get_posting_by_id')
+    def test_api_get_posting_by_id(self, mock_get_by_id, mock_get_by_hash):
+        """Test getting posting by ID"""
+        import asyncio
+
+        from backend.api.endpoints import api_get_posting
+        
+        mock_get_by_id.return_value = {"id": 1, "title": "Job 1"}
+        
+        result = asyncio.run(api_get_posting("1"))
+        
+        assert result["id"] == 1
+        assert result["title"] == "Job 1"
+    
+    @patch('backend.api.endpoints.get_posting_by_hash')
+    @patch('backend.api.endpoints.get_posting_by_id')
+    def test_api_get_posting_by_hash(self, mock_get_by_id, mock_get_by_hash):
+        """Test getting posting by hash"""
+        import asyncio
+
+        from backend.api.endpoints import api_get_posting
+        
+        mock_get_by_hash.return_value = {"id": 1, "hash": "abc123", "title": "Job 1"}
+        
+        result = asyncio.run(api_get_posting("abc123"))
+        
+        assert result["id"] == 1
+        assert result["hash"] == "abc123"
+    
+    @patch('backend.api.endpoints.get_posting_by_hash')
+    @patch('backend.api.endpoints.get_posting_by_id')
+    def test_api_get_posting_not_found(self, mock_get_by_id, mock_get_by_hash):
+        """Test getting non-existent posting"""
+        import asyncio
+
+        from fastapi import HTTPException
+
+        from backend.api.endpoints import api_get_posting
+        
+        mock_get_by_hash.return_value = None
+        mock_get_by_id.return_value = None
+        
+        try:
+            asyncio.run(api_get_posting("nonexistent"))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 404
+            assert e.detail == "Posting not found"
+
+
+class TestApplicationEndpoints:
+    """Test application management HTTP endpoints"""
+    
+    @patch('backend.api.endpoints.apply_to_posting')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_apply_success(self, mock_get_session, mock_apply):
+        """Test successful application submission"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import apply
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_apply.return_value = {"success": True}
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(apply(mock_request, posting_id=1, message="I'm interested", cover_letter="Dear hiring manager"))
+        
+        assert result.status_code == 303
+        assert "/posting-detail.html?id=1&success=application_submitted" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.apply_to_posting')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_apply_failure(self, mock_get_session, mock_apply):
+        """Test application submission failure"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import apply
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_apply.return_value = {"success": False, "error": "already_applied"}
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(apply(mock_request, posting_id=1, message="I'm interested"))
+        
+        assert result.status_code == 303
+        assert "/posting-detail.html?id=1&error=already_applied" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_apply_unauthenticated(self, mock_get_session):
+        """Test application submission without authentication"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import apply
+        
+        mock_get_session.return_value = None
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "invalid_token"
+        
+        result = asyncio.run(apply(mock_request, posting_id=1, message="I'm interested"))
+        
+        assert result.status_code == 303
+        assert "/login.html?error=auth_required" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_applications_by_user')
+    def test_api_get_applications_by_user(self, mock_get_applications):
+        """Test getting applications by user API"""
+        import asyncio
+
+        from backend.api.endpoints import api_get_applications_by_user
+        
+        mock_get_applications.return_value = [
+            {"id": 1, "posting_id": 1, "user_id": 42, "status": "pending"}
+        ]
+        
+        result = asyncio.run(api_get_applications_by_user(42))
+        
+        assert len(result) == 1
+        assert result[0]["user_id"] == 42
+    
+    @patch('backend.api.endpoints.get_applications_by_posting')
+    def test_api_get_applications_by_posting(self, mock_get_applications):
+        """Test getting applications by posting API"""
+        import asyncio
+
+        from backend.api.endpoints import api_get_applications_by_posting
+        
+        mock_get_applications.return_value = [
+            {"id": 1, "posting_id": 1, "user_id": 42, "status": "pending"}
+        ]
+        
+        result = asyncio.run(api_get_applications_by_posting(1))
+        
+        assert len(result) == 1
+        assert result[0]["posting_id"] == 1
+
+
+class TestAuthenticationEndpoints:
+    """Test authentication HTTP endpoints"""
+    
+    @patch('backend.api.endpoints.login_user')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_login_success(self, mock_get_session, mock_login_user):
+        """Test successful login"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import login
+        
+        mock_get_session.return_value = None  # Not already logged in
+        mock_login_user.return_value = {"user_id": 42, "session_token": "new_token"}
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        result = asyncio.run(login(mock_request, "john@example.com", "password"))
+        
+        assert result.status_code == 303
+        assert "/data-view.html" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.login_user')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_login_failure(self, mock_get_session, mock_login_user):
+        """Test login failure"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import login
+        
+        mock_get_session.return_value = None
+        mock_login_user.return_value = None  # Login failed
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        result = asyncio.run(login(mock_request, "john@example.com", "wrongpassword"))
+        
+        assert result.status_code == 303
+        assert "/login.html?error=invalid_credentials" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_login_already_logged_in(self, mock_get_session):
+        """Test login when already logged in"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import login
+        
+        mock_get_session.return_value = {"user_id": 42}  # Already logged in
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "existing_token"
+        
+        result = asyncio.run(login(mock_request, "john@example.com", "password"))
+        
+        assert result.status_code == 303
+        assert "/data-view.html" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.logout_user')
+    def test_logout_success(self, mock_logout_user):
+        """Test successful logout"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import logout
+        
+        mock_logout_user.return_value = True
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(logout(mock_request))
+        
+        assert result.status_code == 303
+        assert "/index.html?success=logged_out" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_auth_status_authenticated(self, mock_get_session):
+        """Test auth status when authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import auth_status
+        
+        mock_get_session.return_value = {"user_id": 42, "email": "john@example.com"}
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(auth_status(mock_request))
+        
+        assert result.status_code == 200
+        content = json.loads(result.body)
+        assert content["authenticated"] is True
+        assert content["user"]["user_id"] == 42
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_auth_status_unauthenticated(self, mock_get_session):
+        """Test auth status when not authenticated"""
+        import asyncio
+        import json
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import auth_status
+        
+        mock_get_session.return_value = None
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        result = asyncio.run(auth_status(mock_request))
+        
+        assert result.status_code == 200
+        content = json.loads(result.body)
+        assert content["authenticated"] is False
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_auth_buttons_authenticated(self, mock_get_session):
+        """Test auth buttons when authenticated"""
+        import asyncio
+        import json
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import auth_buttons
+        
+        mock_get_session.return_value = {"user_id": 42}
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(auth_buttons(mock_request))
+        
+        assert result.status_code == 200
+        content = json.loads(result.body)
+        assert content["authenticated"] is True
+        assert content["action"] == "logout"
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_auth_buttons_unauthenticated(self, mock_get_session):
+        """Test auth buttons when not authenticated"""
+        import asyncio
+        import json
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import auth_buttons
+        
+        mock_get_session.return_value = None
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        result = asyncio.run(auth_buttons(mock_request))
+        
+        assert result.status_code == 200
+        content = json.loads(result.body)
+        assert content["authenticated"] is False
+        assert content["action"] == "login"
+
+
+class TestNavigationEndpoints:
+    """Test navigation and redirect endpoints"""
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_get_navigation_authenticated(self, mock_get_session):
+        """Test navigation for authenticated users"""
+        import asyncio
+        import json
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import get_navigation
+        
+        mock_get_session.return_value = {"user_id": 42}
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(get_navigation(mock_request))
+        
+        assert result.status_code == 200
+        content = json.loads(result.body)
+        assert content["authenticated"] is True
+        assert len(content["nav_items"]) == 5  # Authenticated nav items
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_get_navigation_unauthenticated(self, mock_get_session):
+        """Test navigation for unauthenticated users"""
+        import asyncio
+        import json
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import get_navigation
+        
+        mock_get_session.return_value = None
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        result = asyncio.run(get_navigation(mock_request))
+        
+        assert result.status_code == 200
+        content = json.loads(result.body)
+        assert content["authenticated"] is False
+        assert len(content["nav_items"]) == 4  # Unauthenticated nav items
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_root_redirect_authenticated(self, mock_get_session):
+        """Test root redirect when authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import root
+        
+        mock_get_session.return_value = {"user_id": 42}
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(root(mock_request))
+        
+        assert result.status_code == 302
+        assert "/data-view.html" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_root_redirect_unauthenticated(self, mock_get_session):
+        """Test root redirect when not authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import root
+        
+        mock_get_session.return_value = None
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        result = asyncio.run(root(mock_request))
+        
+        assert result.status_code == 302
+        assert "/index.html" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_login_redirect_authenticated(self, mock_get_session):
+        """Test login redirect when already authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import login_redirect
+        
+        mock_get_session.return_value = {"user_id": 42}
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(login_redirect(mock_request))
+        
+        assert result.status_code == 302
+        assert "/data-view.html" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_login_redirect_unauthenticated(self, mock_get_session):
+        """Test login redirect when not authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import login_redirect
+        
+        mock_get_session.return_value = None
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        result = asyncio.run(login_redirect(mock_request))
+        
+        assert result.status_code == 302
+        assert "/login.html" in result.headers["location"]
+
+
+class TestProfileAndContactEndpoints:
+    """Test profile and contact endpoints"""
+    
+    @patch('backend.api.endpoints.get_applications_by_user')
+    @patch('backend.api.endpoints.get_postings_by_user')
+    @patch('backend.api.endpoints.get_user_by_id')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_get_profile_data_success(self, mock_get_session, mock_get_user, mock_get_postings, mock_get_applications):
+        """Test successful profile data retrieval"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import get_profile_data
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_get_user.return_value = {"id": 42, "name": "John", "email": "john@example.com", "created_at": "2024-01-01"}
+        mock_get_postings.return_value = [{"id": 1, "title": "Job 1"}]
+        mock_get_applications.return_value = [{"id": 1, "posting_id": 1}]
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(get_profile_data(mock_request))
+        
+        assert result["user"]["id"] == 42
+        assert result["stats"]["total_postings"] == 1
+        assert result["stats"]["total_applications"] == 1
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_get_profile_data_unauthenticated(self, mock_get_session):
+        """Test profile data retrieval without authentication"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from fastapi import HTTPException
+
+        from backend.api.endpoints import get_profile_data
+        
+        mock_get_session.return_value = None
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        try:
+            asyncio.run(get_profile_data(mock_request))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 401
+            assert e.detail == "Authentication required"
+    
+    def test_contact_form_success(self):
+        """Test successful contact form submission"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import contact_form
+        
+        mock_request = MagicMock()
+        
+        result = asyncio.run(contact_form(mock_request, "John Doe", "john@example.com", "Hello there"))
+        
+        assert result.status_code == 303
+        assert "/contact.html?success=message_sent" in result.headers["location"]
+
+
+class TestErrorHandlingEndpoints:
+    """Test error handling in endpoints"""
+    
+    @patch('backend.api.endpoints.create_user')
+    @patch('backend.api.endpoints.get_user_by_username')
+    @patch('backend.api.endpoints.get_user_by_email')
+    @patch('backend.api.endpoints.hash_password')
+    def test_create_user_account_server_error(self, mock_hash_password, mock_get_by_email, mock_get_by_username, mock_create_user):
+        """Test user creation with server error"""
+        import asyncio
+
+        from backend.api.endpoints import create_user_account
+        
+        mock_hash_password.return_value = "hashed_password"
+        mock_get_by_email.return_value = None
+        mock_get_by_username.return_value = None
+        mock_create_user.side_effect = Exception("Database connection failed")
+        
+        result = asyncio.run(create_user_account("John", "Doe", "johndoe", "john@example.com", "Password123!"))
+        
+        assert result.status_code == 303
+        assert "/register.html?error=server_error" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_postings_by_user')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_get_my_postings_server_error(self, mock_get_session, mock_get_postings):
+        """Test getting my postings with server error"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from fastapi import HTTPException
+
+        from backend.api.endpoints import get_my_postings
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_get_postings.side_effect = Exception("Database error")
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        try:
+            asyncio.run(get_my_postings(mock_request))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 500
+            assert e.detail == "Failed to fetch your postings"
+    
+    @patch('backend.api.endpoints.login_user')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_login_server_error(self, mock_get_session, mock_login_user):
+        """Test login with server error"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import login
+        
+        mock_get_session.return_value = None
+        mock_login_user.side_effect = Exception("Database connection failed")
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        result = asyncio.run(login(mock_request, "john@example.com", "password"))
+        
+        assert result.status_code == 303
+        assert "/login.html?error=server_error" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_user_by_id')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_get_profile_data_user_not_found(self, mock_get_session, mock_get_user):
+        """Test profile data when user not found"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from fastapi import HTTPException
+
+        from backend.api.endpoints import get_profile_data
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_get_user.return_value = None
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        try:
+            asyncio.run(get_profile_data(mock_request))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 404
+            assert e.detail == "User not found"
+
+
+class TestRedirectEndpoints:
+    """Test additional redirect endpoints"""
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_register_redirect_authenticated(self, mock_get_session):
+        """Test register redirect when already authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import register_redirect
+        
+        mock_get_session.return_value = {"user_id": 42}
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(register_redirect(mock_request))
+        
+        assert result.status_code == 302
+        assert "/data-view.html" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_register_redirect_unauthenticated(self, mock_get_session):
+        """Test register redirect when not authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import register_redirect
+        
+        mock_get_session.return_value = None
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        result = asyncio.run(register_redirect(mock_request))
+        
+        assert result.status_code == 302
+        assert "/register.html" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_data_view_redirect_authenticated(self, mock_get_session):
+        """Test data view redirect when authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import data_view_redirect
+        
+        mock_get_session.return_value = {"user_id": 42}
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(data_view_redirect(mock_request))
+        
+        assert result.status_code == 302
+        assert "/data-view.html" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_data_view_redirect_unauthenticated(self, mock_get_session):
+        """Test data view redirect when not authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import data_view_redirect
+        
+        mock_get_session.return_value = None
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        result = asyncio.run(data_view_redirect(mock_request))
+        
+        assert result.status_code == 302
+        assert "/login.html" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_profile_redirect_authenticated(self, mock_get_session):
+        """Test profile redirect when authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import profile_redirect
+        
+        mock_get_session.return_value = {"user_id": 42}
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(profile_redirect(mock_request))
+        
+        assert result.status_code == 302
+        assert "/profile.html" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_session_user')
+    def test_profile_redirect_unauthenticated(self, mock_get_session):
+        """Test profile redirect when not authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+
+        from backend.api.endpoints import profile_redirect
+        
+        mock_get_session.return_value = None
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        result = asyncio.run(profile_redirect(mock_request))
+        
+        assert result.status_code == 302
+        assert "/login.html" in result.headers["location"]
+    
+    def test_contact_redirect(self):
+        """Test contact page redirect"""
+        import asyncio
+
+        from backend.api.endpoints import contact_redirect
+        
+        result = asyncio.run(contact_redirect())
+        
+        assert result.status_code == 302
+        assert "/contact.html" in result.headers["location"]
+    
+    def test_password_reset_redirect(self):
+        """Test password reset page redirect"""
+        import asyncio
+
+        from backend.api.endpoints import password_reset_redirect
+        
+        result = asyncio.run(password_reset_redirect())
+        
+        assert result.status_code == 302
+        assert "/password-reset.html" in result.headers["location"]
+
+
+class TestMissingCoverageEndpoints:
+    """Test endpoints that are missing coverage"""
+    
+    @patch('backend.api.endpoints.get_redis_client')
+    @patch('backend.api.endpoints.create_user')
+    @patch('backend.api.endpoints.get_user_by_username')
+    @patch('backend.api.endpoints.get_user_by_email')
+    @patch('backend.api.endpoints.hash_password')
+    def test_create_user_account_http_exception_reraise(self, mock_hash_password, mock_get_by_email, mock_get_by_username, mock_create_user, mock_redis):
+        """Test user creation with HTTPException re-raise"""
+        import asyncio
+        from fastapi import HTTPException
+        from backend.api.endpoints import create_user_account
+        
+        mock_hash_password.return_value = "hashed_password"
+        mock_get_by_email.return_value = None
+        mock_get_by_username.return_value = None
+        mock_create_user.side_effect = HTTPException(status_code=400, detail="Validation error")
+        
+        try:
+            asyncio.run(create_user_account("John", "Doe", "johndoe", "john@example.com", "Password123!"))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 400
+            assert e.detail == "Validation error"
+    
+    @patch('backend.api.endpoints.track_posting_view')
+    @patch('backend.api.endpoints.get_posting_with_public_stats')
+    @patch('backend.api.endpoints.get_posting_by_id')
+    @patch('backend.api.endpoints.get_posting_by_hash')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_view_posting_value_error_handling(self, mock_get_session, mock_get_by_hash, mock_get_by_id, mock_get_posting, mock_track_view):
+        """Test view_posting with ValueError in ID conversion"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import view_posting
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_get_by_hash.return_value = None  # Hash lookup fails
+        mock_get_by_id.return_value = {"id": 1, "title": "Job 1", "user_id": 42}  # ID lookup succeeds
+        mock_get_posting.return_value = {"id": 1, "title": "Job 1", "user_id": 42}
+        mock_track_view.return_value = True
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        mock_request.client.host = "127.0.0.1"
+        mock_request.headers.get.return_value = "Test User Agent"
+        
+        # Use a string that looks like an ID but will trigger fallback
+        result = asyncio.run(view_posting("123", mock_request))
+        
+        assert result["posting"]["id"] == 1
+        assert result["is_authenticated"] is True
+    
+    @patch('backend.api.endpoints.get_public_postings')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_data_view_page_authenticated(self, mock_get_session, mock_get_postings):
+        """Test data_view_page endpoint when authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import data_view_page
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_get_postings.return_value = [
+            {"id": 1, "title": "Job 1", "user_id": 42},
+            {"id": 2, "title": "Job 2", "user_id": 99}
+        ]
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(data_view_page(mock_request))
+        
+        assert result.status_code == 302
+        assert "/data-view.html" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_public_postings')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_data_view_page_unauthenticated(self, mock_get_session, mock_get_postings):
+        """Test data_view_page endpoint when not authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import data_view_page
+        
+        mock_get_session.return_value = None
+        mock_get_postings.return_value = [
+            {"id": 1, "title": "Job 1", "user_id": 42},
+            {"id": 2, "title": "Job 2", "user_id": 99}
+        ]
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        result = asyncio.run(data_view_page(mock_request))
+        
+        assert result.status_code == 302
+        assert "/data-view.html" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.track_posting_view')
+    @patch('backend.api.endpoints.get_posting_with_public_stats')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_view_posting_page_authenticated(self, mock_get_session, mock_get_posting, mock_track_view):
+        """Test view_posting_page endpoint when authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import view_posting_page
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_get_posting.return_value = {"id": 1, "title": "Job 1", "user_id": 42}
+        mock_track_view.return_value = True
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        mock_request.client.host = "127.0.0.1"
+        mock_request.headers.get.return_value = "Test User Agent"
+        
+        result = asyncio.run(view_posting_page(1, mock_request))
+        
+        assert result.status_code == 302
+        assert "/posting-detail.html?id=1" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.track_posting_view')
+    @patch('backend.api.endpoints.get_posting_with_public_stats')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_view_posting_page_not_found(self, mock_get_session, mock_get_posting, mock_track_view):
+        """Test view_posting_page endpoint when posting not found"""
+        import asyncio
+        from fastapi import HTTPException
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import view_posting_page
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_get_posting.return_value = None
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        mock_request.client.host = "127.0.0.1"
+        mock_request.headers.get.return_value = "Test User Agent"
+        
+        try:
+            asyncio.run(view_posting_page(999, mock_request))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 404
+            assert e.detail == "Posting not found"
+    
+    @patch('backend.api.endpoints.track_posting_view')
+    @patch('backend.api.endpoints.get_posting_with_public_stats')
+    @patch('backend.api.endpoints.get_posting_by_hash')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_posting_detail_page_authenticated(self, mock_get_session, mock_get_by_hash, mock_get_posting, mock_track_view):
+        """Test posting_detail_page endpoint when authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import posting_detail_page
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_get_by_hash.return_value = {"id": 1, "title": "Job 1", "user_id": 42}
+        mock_get_posting.return_value = {"id": 1, "title": "Job 1", "user_id": 42}
+        mock_track_view.return_value = True
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        mock_request.client.host = "127.0.0.1"
+        mock_request.headers.get.return_value = "Test User Agent"
+        
+        result = asyncio.run(posting_detail_page("abc123", mock_request))
+        
+        assert result["posting"]["id"] == 1
+        assert result["is_authenticated"] is True
+        assert result["is_owner"] is True
+        assert result["can_apply"] is False
+    
+    @patch('backend.api.endpoints.track_posting_view')
+    @patch('backend.api.endpoints.get_posting_with_public_stats')
+    @patch('backend.api.endpoints.get_posting_by_hash')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_posting_detail_page_unauthenticated(self, mock_get_session, mock_get_by_hash, mock_get_posting, mock_track_view):
+        """Test posting_detail_page endpoint when not authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import posting_detail_page
+        
+        mock_get_session.return_value = None
+        mock_get_by_hash.return_value = {"id": 1, "title": "Job 1", "user_id": 42}
+        mock_get_posting.return_value = {"id": 1, "title": "Job 1", "user_id": 42}
+        mock_track_view.return_value = True
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        mock_request.client.host = "127.0.0.1"
+        mock_request.headers.get.return_value = "Test User Agent"
+        
+        result = asyncio.run(posting_detail_page("abc123", mock_request))
+        
+        assert result["posting"]["id"] == 1
+        assert result["is_authenticated"] is False
+        assert result["is_owner"] is False
+        assert result["can_apply"] is False
+    
+    @patch('backend.api.endpoints.get_posting_by_hash')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_posting_detail_page_not_found(self, mock_get_session, mock_get_by_hash):
+        """Test posting_detail_page endpoint when posting not found"""
+        import asyncio
+        from fastapi import HTTPException
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import posting_detail_page
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_get_by_hash.return_value = None
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        try:
+            asyncio.run(posting_detail_page("nonexistent", mock_request))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 404
+            assert e.detail == "Posting not found"
+    
+    def test_posting_detail_static(self):
+        """Test posting_detail_static endpoint"""
+        import asyncio
+        from backend.api.endpoints import posting_detail_static
+        
+        result = asyncio.run(posting_detail_static())
+        
+        assert result.status_code == 302
+        assert "/posting-detail.html" in result.headers["location"]
+    
+    @patch('backend.api.endpoints.get_public_postings')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_get_postings_data_authenticated(self, mock_get_session, mock_get_postings):
+        """Test get_postings_data endpoint when authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import get_postings_data
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_get_postings.return_value = [
+            {"id": 1, "title": "Job 1", "user_id": 42},
+            {"id": 2, "title": "Job 2", "user_id": 99}
+        ]
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        
+        result = asyncio.run(get_postings_data(mock_request))
+        
+        assert result["user"]["user_id"] == 42
+        assert result["is_authenticated"] is True
+        assert len(result["postings"]) == 2
+        assert result["postings"][0]["is_own"] is True
+        assert result["postings"][0]["can_apply"] is False
+        assert result["postings"][1]["is_own"] is False
+        assert result["postings"][1]["can_apply"] is True
+    
+    @patch('backend.api.endpoints.get_public_postings')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_get_postings_data_unauthenticated(self, mock_get_session, mock_get_postings):
+        """Test get_postings_data endpoint when not authenticated"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import get_postings_data
+        
+        mock_get_session.return_value = None
+        mock_get_postings.return_value = [
+            {"id": 1, "title": "Job 1", "user_id": 42},
+            {"id": 2, "title": "Job 2", "user_id": 99}
+        ]
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        result = asyncio.run(get_postings_data(mock_request))
+        
+        assert result["user"] is None
+        assert result["is_authenticated"] is False
+        assert len(result["postings"]) == 2
+        assert result["postings"][0]["is_own"] is False
+        assert result["postings"][0]["can_apply"] is None  # None and not False = None
+        assert result["postings"][0]["is_authenticated"] is False
+        assert result["postings"][1]["is_own"] is False
+        assert result["postings"][1]["can_apply"] is None  # None and not False = None
+        assert result["postings"][1]["is_authenticated"] is False
+    
+    @patch('backend.api.endpoints.login_user')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_login_http_exception_reraise(self, mock_get_session, mock_login_user):
+        """Test login with HTTPException re-raise"""
+        import asyncio
+        from fastapi import HTTPException
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import login
+        
+        mock_get_session.return_value = None
+        mock_login_user.side_effect = HTTPException(status_code=429, detail="Too many requests")
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        try:
+            asyncio.run(login(mock_request, "john@example.com", "password"))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 429
+            assert e.detail == "Too many requests"
+
+    @patch('backend.api.endpoints.get_posting_with_public_stats')
+    @patch('backend.api.endpoints.track_posting_view')
+    @patch('backend.api.endpoints.get_posting_by_id')
+    @patch('backend.api.endpoints.get_posting_by_hash')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_view_posting_fallback_value_error(self, mock_get_session, mock_get_by_hash, mock_get_by_id, mock_track_view, mock_get_stats):
+        """Test ValueError handling in posting lookup fallback (lines 247-248)"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import view_posting
+        from fastapi import HTTPException
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_get_by_hash.return_value = None  # Hash lookup fails
+        mock_get_by_id.return_value = None    # ID lookup also fails
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        mock_request.client.host = "127.0.0.1"
+        mock_request.headers.get.return_value = "Test User Agent"
+        
+        # Use invalid string that can't convert to int
+        try:
+            asyncio.run(view_posting("invalid_id", mock_request))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 404
+            assert e.detail == "Posting not found"
+
+    @patch('backend.api.endpoints.get_posting_with_public_stats')
+    @patch('backend.api.endpoints.track_posting_view')
+    @patch('backend.api.endpoints.get_posting_by_hash')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_view_posting_stats_fallback(self, mock_get_session, mock_get_by_hash, mock_track_view, mock_get_stats):
+        """Test posting stats fallback when stats not available (line 263)"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import view_posting
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_get_stats.return_value = None  # Stats not available
+        
+        posting_data = {"id": 1, "title": "Job 1", "user_id": 42}
+        mock_get_by_hash.return_value = posting_data
+        mock_track_view.return_value = True
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        mock_request.client.host = "127.0.0.1"
+        mock_request.headers.get.return_value = "Test User Agent"
+        
+        result = asyncio.run(view_posting("hash123", mock_request))
+        
+        # Should use original posting when stats are None
+        assert result["posting"]["id"] == 1
+        assert result["posting"]["title"] == "Job 1"
+
+    @patch('backend.api.endpoints.get_posting_analytics')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_get_posting_analytics_unauthenticated(self, mock_get_session, mock_get_analytics):
+        """Test analytics endpoint with no authentication (line 290)"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import get_posting_analytics_endpoint
+        from fastapi import HTTPException
+        
+        mock_get_session.return_value = None  # Not authenticated
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        try:
+            asyncio.run(get_posting_analytics_endpoint(1, mock_request))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 401
+            assert e.detail == "Authentication required"
+
+    @patch('backend.api.endpoints.get_user_posting_stats')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_get_dashboard_stats_unauthenticated(self, mock_get_session, mock_get_stats):
+        """Test dashboard stats endpoint with no authentication (line 307)"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import get_dashboard_stats
+        from fastapi import HTTPException
+        
+        mock_get_session.return_value = None  # Not authenticated
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        try:
+            asyncio.run(get_dashboard_stats(mock_request))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 401
+            assert e.detail == "Authentication required"
+
+    @patch('backend.api.endpoints.get_applications_by_user')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_get_my_applications_unauthenticated(self, mock_get_session, mock_get_applications):
+        """Test my applications endpoint with no authentication (line 319)"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import get_my_applications
+        from fastapi import HTTPException
+        
+        mock_get_session.return_value = None  # Not authenticated
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        try:
+            asyncio.run(get_my_applications(mock_request))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 401
+            assert e.detail == "Authentication required"
+
+    @patch('backend.api.endpoints.get_application_details')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_get_application_details_unauthenticated(self, mock_get_session, mock_get_details):
+        """Test application details endpoint with no authentication (line 331)"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import get_application_details_endpoint
+        from fastapi import HTTPException
+        
+        mock_get_session.return_value = None  # Not authenticated
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        
+        try:
+            asyncio.run(get_application_details_endpoint(1, mock_request))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 401
+            assert e.detail == "Authentication required"
+
+    @patch('backend.api.endpoints.get_posting_with_public_stats')
+    @patch('backend.api.endpoints.track_posting_view')
+    @patch('backend.api.endpoints.get_posting_by_hash')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_posting_detail_page_stats_fallback(self, mock_get_session, mock_get_by_hash, mock_track_view, mock_get_stats):
+        """Test posting detail page stats fallback when stats not available (line 435)"""
+        import asyncio
+        from unittest.mock import MagicMock
+        from backend.api.endpoints import posting_detail_page
+        
+        mock_get_session.return_value = {"user_id": 42}
+        mock_get_stats.return_value = None  # Stats not available
+        
+        posting_data = {"id": 1, "title": "Job 1", "user_id": 42}
+        mock_get_by_hash.return_value = posting_data
+        mock_track_view.return_value = True
+        
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        mock_request.client.host = "127.0.0.1"
+        mock_request.headers.get.return_value = "Test User Agent"
+        
+        result = asyncio.run(posting_detail_page("hash123", mock_request))
+        
+        # Should use original posting when stats are None
+        assert "posting" in result
+        assert result["posting"]["id"] == 1
+        assert result["posting"]["title"] == "Job 1"
