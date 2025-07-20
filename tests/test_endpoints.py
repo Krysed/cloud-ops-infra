@@ -2052,7 +2052,9 @@ class TestMissingCoverageEndpoints:
     def test_create_user_account_http_exception_reraise(self, mock_hash_password, mock_get_by_email, mock_get_by_username, mock_create_user, mock_redis):
         """Test user creation with HTTPException re-raise"""
         import asyncio
+
         from fastapi import HTTPException
+
         from backend.api.endpoints import create_user_account
         
         mock_hash_password.return_value = "hashed_password"
@@ -2076,6 +2078,7 @@ class TestMissingCoverageEndpoints:
         """Test view_posting with ValueError in ID conversion"""
         import asyncio
         from unittest.mock import MagicMock
+
         from backend.api.endpoints import view_posting
         
         mock_get_session.return_value = {"user_id": 42}
@@ -2101,6 +2104,7 @@ class TestMissingCoverageEndpoints:
         """Test data_view_page endpoint when authenticated"""
         import asyncio
         from unittest.mock import MagicMock
+
         from backend.api.endpoints import data_view_page
         
         mock_get_session.return_value = {"user_id": 42}
@@ -2123,6 +2127,7 @@ class TestMissingCoverageEndpoints:
         """Test data_view_page endpoint when not authenticated"""
         import asyncio
         from unittest.mock import MagicMock
+
         from backend.api.endpoints import data_view_page
         
         mock_get_session.return_value = None
@@ -2146,6 +2151,7 @@ class TestMissingCoverageEndpoints:
         """Test view_posting_page endpoint when authenticated"""
         import asyncio
         from unittest.mock import MagicMock
+
         from backend.api.endpoints import view_posting_page
         
         mock_get_session.return_value = {"user_id": 42}
@@ -2168,8 +2174,10 @@ class TestMissingCoverageEndpoints:
     def test_view_posting_page_not_found(self, mock_get_session, mock_get_posting, mock_track_view):
         """Test view_posting_page endpoint when posting not found"""
         import asyncio
-        from fastapi import HTTPException
         from unittest.mock import MagicMock
+
+        from fastapi import HTTPException
+
         from backend.api.endpoints import view_posting_page
         
         mock_get_session.return_value = {"user_id": 42}
@@ -2195,6 +2203,7 @@ class TestMissingCoverageEndpoints:
         """Test posting_detail_page endpoint when authenticated"""
         import asyncio
         from unittest.mock import MagicMock
+
         from backend.api.endpoints import posting_detail_page
         
         mock_get_session.return_value = {"user_id": 42}
@@ -2222,6 +2231,7 @@ class TestMissingCoverageEndpoints:
         """Test posting_detail_page endpoint when not authenticated"""
         import asyncio
         from unittest.mock import MagicMock
+
         from backend.api.endpoints import posting_detail_page
         
         mock_get_session.return_value = None
@@ -2246,8 +2256,10 @@ class TestMissingCoverageEndpoints:
     def test_posting_detail_page_not_found(self, mock_get_session, mock_get_by_hash):
         """Test posting_detail_page endpoint when posting not found"""
         import asyncio
-        from fastapi import HTTPException
         from unittest.mock import MagicMock
+
+        from fastapi import HTTPException
+
         from backend.api.endpoints import posting_detail_page
         
         mock_get_session.return_value = {"user_id": 42}
@@ -2266,6 +2278,7 @@ class TestMissingCoverageEndpoints:
     def test_posting_detail_static(self):
         """Test posting_detail_static endpoint"""
         import asyncio
+
         from backend.api.endpoints import posting_detail_static
         
         result = asyncio.run(posting_detail_static())
@@ -2279,6 +2292,7 @@ class TestMissingCoverageEndpoints:
         """Test get_postings_data endpoint when authenticated"""
         import asyncio
         from unittest.mock import MagicMock
+
         from backend.api.endpoints import get_postings_data
         
         mock_get_session.return_value = {"user_id": 42}
@@ -2306,6 +2320,7 @@ class TestMissingCoverageEndpoints:
         """Test get_postings_data endpoint when not authenticated"""
         import asyncio
         from unittest.mock import MagicMock
+
         from backend.api.endpoints import get_postings_data
         
         mock_get_session.return_value = None
@@ -2334,8 +2349,10 @@ class TestMissingCoverageEndpoints:
     def test_login_http_exception_reraise(self, mock_get_session, mock_login_user):
         """Test login with HTTPException re-raise"""
         import asyncio
-        from fastapi import HTTPException
         from unittest.mock import MagicMock
+
+        from fastapi import HTTPException
+
         from backend.api.endpoints import login
         
         mock_get_session.return_value = None
@@ -2360,8 +2377,10 @@ class TestMissingCoverageEndpoints:
         """Test ValueError handling in posting lookup fallback (lines 247-248)"""
         import asyncio
         from unittest.mock import MagicMock
-        from backend.api.endpoints import view_posting
+
         from fastapi import HTTPException
+
+        from backend.api.endpoints import view_posting
         
         mock_get_session.return_value = {"user_id": 42}
         mock_get_by_hash.return_value = None  # Hash lookup fails
@@ -2388,6 +2407,7 @@ class TestMissingCoverageEndpoints:
         """Test posting stats fallback when stats not available (line 263)"""
         import asyncio
         from unittest.mock import MagicMock
+
         from backend.api.endpoints import view_posting
         
         mock_get_session.return_value = {"user_id": 42}
@@ -2414,8 +2434,10 @@ class TestMissingCoverageEndpoints:
         """Test analytics endpoint with no authentication (line 290)"""
         import asyncio
         from unittest.mock import MagicMock
-        from backend.api.endpoints import get_posting_analytics_endpoint
+
         from fastapi import HTTPException
+
+        from backend.api.endpoints import get_posting_analytics_endpoint
         
         mock_get_session.return_value = None  # Not authenticated
         
@@ -2435,8 +2457,10 @@ class TestMissingCoverageEndpoints:
         """Test dashboard stats endpoint with no authentication (line 307)"""
         import asyncio
         from unittest.mock import MagicMock
-        from backend.api.endpoints import get_dashboard_stats
+
         from fastapi import HTTPException
+
+        from backend.api.endpoints import get_dashboard_stats
         
         mock_get_session.return_value = None  # Not authenticated
         
@@ -2456,8 +2480,10 @@ class TestMissingCoverageEndpoints:
         """Test my applications endpoint with no authentication (line 319)"""
         import asyncio
         from unittest.mock import MagicMock
-        from backend.api.endpoints import get_my_applications
+
         from fastapi import HTTPException
+
+        from backend.api.endpoints import get_my_applications
         
         mock_get_session.return_value = None  # Not authenticated
         
@@ -2477,8 +2503,10 @@ class TestMissingCoverageEndpoints:
         """Test application details endpoint with no authentication (line 331)"""
         import asyncio
         from unittest.mock import MagicMock
-        from backend.api.endpoints import get_application_details_endpoint
+
         from fastapi import HTTPException
+
+        from backend.api.endpoints import get_application_details_endpoint
         
         mock_get_session.return_value = None  # Not authenticated
         
@@ -2500,6 +2528,7 @@ class TestMissingCoverageEndpoints:
         """Test posting detail page stats fallback when stats not available (line 435)"""
         import asyncio
         from unittest.mock import MagicMock
+
         from backend.api.endpoints import posting_detail_page
         
         mock_get_session.return_value = {"user_id": 42}
