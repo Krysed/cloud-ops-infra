@@ -1,7 +1,7 @@
-from contextlib import contextmanager
-from datetime import UTC, datetime
 import secrets
 import string
+from contextlib import contextmanager
+from datetime import UTC, datetime
 
 import psycopg2
 import psycopg2.extras

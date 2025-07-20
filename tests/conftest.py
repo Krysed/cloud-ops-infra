@@ -68,8 +68,10 @@ def mock_redis():
         yield mock_redis_client
 
 @pytest.fixture
-def mock_redis_client(monkeypatch):
-    """Mock redis client"""
+def mock_redis_for_security(monkeypatch):
+    """Mock redis client for security module - not auto-use"""
     mock_redis = MagicMock()
-    monkeypatch.setattr("backend.core.db.get_redis_client", lambda: mock_redis)
+    # Mock get_redis_client for both db and security modules
+    monkeypatch.setattr("backend.core.security.get_redis_client", lambda: mock_redis)
+    monkeypatch.setattr("backend.core.cache.get_redis_client", lambda: mock_redis)
     return mock_redis

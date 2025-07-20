@@ -1,4 +1,5 @@
 import json
+from contextlib import suppress
 
 from core.cache import get_redis_client
 from core.db import (
@@ -12,8 +13,8 @@ from core.db import (
     get_applications_by_posting,
     get_applications_by_user,
     get_posting_analytics,
-    get_posting_by_id,
     get_posting_by_hash,
+    get_posting_by_id,
     get_posting_with_public_stats,
     get_postings_by_user,
     get_public_postings,
@@ -30,7 +31,7 @@ from core.logger import logger
 from core.security import get_session_user, hash_password, login_user, logout_user
 from core.utility import json_serializer
 from fastapi import APIRouter, Form, HTTPException, Request
-from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 router = APIRouter()
 api_router = APIRouter(prefix="/api")
@@ -118,7 +119,7 @@ async def create_posting(
         return RedirectResponse(url="/login.html?error=auth_required", status_code=303)
     
     user_id = session_data["user_id"]
-    posting_hash = create_posting_in_db(title, post_description, category, user_id)
+    create_posting_in_db(title, post_description, category, user_id)
     return RedirectResponse(url="/my-postings.html?success=posting_created", status_code=303)
 
 @api_router.put("/postings")
@@ -234,11 +235,9 @@ async def view_posting(posting_hash: str, request: Request):
     
     # Get posting by hash first (fallback to treating as ID for compatibility)
     posting = None
-    try:
+    with suppress(Exception):
         # Try hash lookup first
         posting = get_posting_by_hash(posting_hash)
-    except:
-        pass
     
     if not posting:
         # Fallback to ID lookup for existing functionality
@@ -453,7 +452,7 @@ async def posting_detail_page(posting_hash: str, request: Request):
     }
 
 @api_router.get("/posting-detail")
-async def posting_detail_page():
+async def posting_detail_static():
     """Serve posting detail page"""
     return RedirectResponse(url="/posting-detail.html", status_code=302)
 
