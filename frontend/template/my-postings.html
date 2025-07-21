@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>My Postings</title>
+
+    <!-- Fonts and CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,200;0,400;0,700;1,200&family=Unbounded:wght@400;700&display=swap" rel="stylesheet"/>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/static/css/bootstrap-icons.css" rel="stylesheet" />
+    <link href="/static/css/tooplate-kool-form-pack.css" rel="stylesheet" />
+  </head>
+
+  <body>
+    <main>
+      <!-- Header with Sidebar Trigger -->
+      <header class="site-header">
+        <div class="container">
+          <div class="row justify-content-between">
+            <div class="col-lg-12 col-12 d-flex">
+              <a class="site-header-text d-flex justify-content-center align-items-center me-auto" href="/">
+                <i class="bi-box"></i>
+                <span>Kool Form Pack</span>
+              </a>
+
+              <ul class="social-icon d-flex justify-content-center align-items-center mx-auto">
+                <span class="text-white me-4 d-none d-lg-block">Stay connected</span>
+                <li class="social-icon-item"><a href="#" class="social-icon-link bi-instagram"></a></li>
+                <li class="social-icon-item"><a href="#" class="social-icon-link bi-twitter"></a></li>
+                <li class="social-icon-item"><a href="#" class="social-icon-link bi-whatsapp"></a></li>
+              </ul>
+
+              <div>
+                <a href="/create-posting.html" class="custom-btn custom-border-btn btn">
+                  Create Posting <i class="bi-plus-circle ms-2"></i>
+                </a>
+              </div>
+
+              <div class="auth-buttons ms-3">
+                <!-- Auth buttons will be populated by backend -->
+              </div>
+
+              <a class="bi-list offcanvas-icon" data-bs-toggle="offcanvas" href="#offcanvasMenu" role="button" aria-controls="offcanvasMenu"></a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Offcanvas Sidebar -->
+      <div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="offcanvasMenu" aria-labelledby="offcanvasMenuLabel">
+        <div class="offcanvas-header">
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column justify-content-center align-items-center">
+          <nav>
+            <ul>
+              <!-- Navigation items will be populated by JavaScript -->
+            </ul>
+          </nav>
+        </div>
+      </div>
+
+      <!-- My Postings Section -->
+      <section class="hero-section d-flex justify-content-center align-items-center">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-12 col-12 mx-auto">
+              <div class="bg-white p-4 rounded shadow-lg">
+                <h2 class="text-center mb-4">My Postings</h2>
+                
+                <!-- Alert Messages -->
+                <div id="alert-container"></div>
+                
+                <!-- Quick Stats Cards -->
+                <div class="row mb-4">
+                  <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card bg-primary text-white">
+                      <div class="card-body text-center">
+                        <i class="bi bi-file-post fs-2"></i>
+                        <h4 id="total-postings" class="mt-2">-</h4>
+                        <p class="mb-0">Total Postings</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card bg-success text-white">
+                      <div class="card-body text-center">
+                        <i class="bi bi-eye fs-2"></i>
+                        <h4 id="total-views" class="mt-2">-</h4>
+                        <p class="mb-0">Total Views</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card bg-info text-white">
+                      <div class="card-body text-center">
+                        <i class="bi bi-people fs-2"></i>
+                        <h4 id="total-applications" class="mt-2">-</h4>
+                        <p class="mb-0">Total Applications</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card bg-warning text-white">
+                      <div class="card-body text-center">
+                        <i class="bi bi-graph-up fs-2"></i>
+                        <h4 id="avg-applications" class="mt-2">-</h4>
+                        <p class="mb-0">Avg Applications</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Postings Table -->
+                <div class="table-responsive">
+                  <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                      <tr>
+                        <th scope="col">Title</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Views</th>
+                        <th scope="col">Applications</th>
+                        <th scope="col">Created</th>
+                        <th scope="col">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="postings-tbody">
+                      <tr>
+                        <td colspan="7" class="text-center">
+                          <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                          </div>
+                          <p class="mt-2">Loading your postings...</p>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Background Video -->
+        <div class="video-wrap">
+          <video autoplay loop muted class="custom-video" poster="">
+            <source src="/static/videos/video.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      </section>
+    </main>
+
+    <!-- Posting Details Modal -->
+    <div class="modal fade" id="postingDetailsModal" tabindex="-1" aria-labelledby="postingDetailsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="postingDetailsModalLabel">Posting Details & Analytics</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <!-- Posting details and analytics will be populated here -->
+            <div id="posting-details-content">
+              <div class="text-center">
+                <div class="spinner-border" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Applications Modal -->
+    <div class="modal fade" id="applicationsModal" tabindex="-1" aria-labelledby="applicationsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="applicationsModalLabel">Applications</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <!-- Applications will be populated here -->
+            <div id="applications-content">
+              <div class="text-center">
+                <div class="spinner-border" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JS -->
+    <script src="/static/js/jquery.min.js"></script>
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/countdown.js"></script>
+    <script src="/static/js/init.js"></script>
+    <script src="/static/js/my-postings.js"></script>
+    <script src="/static/js/auth-buttons.js"></script>
+    <script src="/static/js/navigation.js"></script>
+  </body>
+</html>

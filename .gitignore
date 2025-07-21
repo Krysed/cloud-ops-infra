@@ -9,3 +9,5 @@ frontend/static/fonts/
 utility/
 *-secret.yaml
 .env
+cookies.txt
+*.cookies

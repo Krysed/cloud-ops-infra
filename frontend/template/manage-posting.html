@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Posting</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Manage Posting</h2>
+                    <a href="/my-postings.html" class="btn btn-outline-secondary">Back to My Postings</a>
+                </div>
+
+                <div id="loading" class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading posting data...</p>
+                </div>
+
+                <div id="error-message" class="alert alert-danger d-none" role="alert">
+                    <h5>Error</h5>
+                    <p id="error-text"></p>
+                </div>
+
+                <form id="manage-posting-form" class="d-none" method="POST" action="/api/postings/update">
+                    <input type="hidden" name="posting_id" id="posting_id">
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title *</label>
+                        <input type="text" class="form-control" name="title" id="title" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category *</label>
+                        <input type="text" class="form-control" name="category" id="category" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="post_description" class="form-label">Description *</label>
+                        <textarea class="form-control" name="post_description" id="post_description" rows="6" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status *</label>
+                        <select class="form-control" name="status" id="status" required>
+                            <option value="open">Open</option>
+                            <option value="closed">Closed</option>
+                            <option value="draft">Draft</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Update Posting</button>
+                        <a href="/my-postings.html" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get posting ID from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const postingId = urlParams.get('id');
+            
+            if (!postingId) {
+                showError('No posting ID provided');
+                return;
+            }
+
+            // Fetch posting data from API
+            fetch(`/api/posting/${postingId}/manage`)
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            window.location.href = '/login.html?error=auth_required';
+                            return;
+                        }
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    populateForm(data.posting);
+                })
+                .catch(error => {
+                    console.error('Error loading posting:', error);
+                    showError('Failed to load posting data. Please try again.');
+                });
+
+            function populateForm(posting) {
+                document.getElementById('posting_id').value = posting.id;
+                document.getElementById('title').value = posting.title;
+                document.getElementById('category').value = posting.category;
+                document.getElementById('post_description').value = posting.description;
+                document.getElementById('status').value = posting.status;
+
+                // Hide loading and show form
+                document.getElementById('loading').classList.add('d-none');
+                document.getElementById('manage-posting-form').classList.remove('d-none');
+            }
+
+            function showError(message) {
+                document.getElementById('error-text').textContent = message;
+                document.getElementById('loading').classList.add('d-none');
+                document.getElementById('error-message').classList.remove('d-none');
+            }
+        });
+    </script>
+</body>
+</html>

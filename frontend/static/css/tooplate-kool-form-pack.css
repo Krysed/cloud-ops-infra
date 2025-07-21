@@ -582,6 +582,13 @@ strong {
   }
 }
 
+/* Card text override for white text cards */
+.card.text-white p,
+.card.text-white h4,
+.card.text-white i {
+  color: white !important;
+}
+
 @media screen and (max-width: 480px) {
   .site-header .social-icon {
     display: none !important;
