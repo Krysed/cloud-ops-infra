@@ -1202,6 +1202,7 @@ class TestPostingManagementEndpoints:
         """Test successful posting update"""
         import asyncio
         from unittest.mock import MagicMock
+
         from backend.api.endpoints import update_posting
         
         mock_get_session.return_value = {"user_id": 42}
@@ -1230,6 +1231,7 @@ class TestPostingManagementEndpoints:
         """Test posting update when posting not found"""
         import asyncio
         from unittest.mock import MagicMock
+
         from backend.api.endpoints import update_posting
         
         mock_get_session.return_value = {"user_id": 42}
@@ -2580,3 +2582,145 @@ class TestMissingCoverageEndpoints:
         assert "posting" in result
         assert result["posting"]["id"] == 1
         assert result["posting"]["title"] == "Job 1"
+
+
+class TestViewPostingWithApplicationStatus:
+    """Test the enhanced view_posting endpoint with application status logic"""
+    
+    @patch('backend.api.endpoints.check_user_application_exists')
+    @patch('backend.api.endpoints.get_session_user')
+    @patch('backend.api.endpoints.get_posting_with_public_stats')
+    @patch('backend.api.endpoints.get_posting_by_hash')
+    @patch('backend.api.endpoints.track_posting_view')
+    def test_view_posting_user_has_applied(self, mock_track_view, mock_get_by_hash, 
+                                         mock_get_stats, mock_get_session, mock_check_applied):
+        """Test view_posting returns has_applied=True when user already applied"""
+        from backend.api.endpoints import view_posting
+        
+        # Mock authenticated user who has already applied
+        mock_get_session.return_value = {"user_id": 42}
+        
+        # Mock posting data
+        posting_data = {"id": 1, "title": "Job 1", "user_id": 18}  # Different user owns posting
+        mock_get_by_hash.return_value = posting_data
+        mock_get_stats.return_value = posting_data
+        
+        # Mock user has already applied
+        mock_check_applied.return_value = True
+        
+        # Mock request
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        mock_request.client.host = "127.0.0.1"
+        mock_request.headers.get.return_value = "Test User Agent"
+        
+        result = asyncio.run(view_posting("hash123", mock_request))
+        
+        # Verify application status logic
+        assert result["is_authenticated"] is True
+        assert result["is_owner"] is False  # User doesn't own the posting
+        assert result["has_applied"] is True  # User has applied
+        assert result["can_apply"] is False  # Can't apply again
+        
+        # Verify check_user_application_exists was called correctly
+        mock_check_applied.assert_called_once_with(42, 1)
+    
+    @patch('backend.api.endpoints.check_user_application_exists')
+    @patch('backend.api.endpoints.get_session_user')
+    @patch('backend.api.endpoints.get_posting_with_public_stats')
+    @patch('backend.api.endpoints.get_posting_by_hash')
+    @patch('backend.api.endpoints.track_posting_view')
+    def test_view_posting_user_can_apply(self, mock_track_view, mock_get_by_hash, 
+                                       mock_get_stats, mock_get_session, mock_check_applied):
+        """Test view_posting returns can_apply=True when user hasn't applied"""
+        from backend.api.endpoints import view_posting
+        
+        # Mock authenticated user who hasn't applied
+        mock_get_session.return_value = {"user_id": 42}
+        
+        # Mock posting data
+        posting_data = {"id": 1, "title": "Job 1", "user_id": 18}  # Different user owns posting
+        mock_get_by_hash.return_value = posting_data
+        mock_get_stats.return_value = posting_data
+        
+        # Mock user has NOT applied yet
+        mock_check_applied.return_value = False
+        
+        # Mock request
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        mock_request.client.host = "127.0.0.1"
+        mock_request.headers.get.return_value = "Test User Agent"
+        
+        result = asyncio.run(view_posting("hash123", mock_request))
+        
+        # Verify application status logic
+        assert result["is_authenticated"] is True
+        assert result["is_owner"] is False  # User doesn't own the posting
+        assert result["has_applied"] is False  # User hasn't applied
+        assert result["can_apply"] is True  # Can apply
+        
+        # Verify check_user_application_exists was called correctly
+        mock_check_applied.assert_called_once_with(42, 1)
+    
+    @patch('backend.api.endpoints.get_session_user')
+    @patch('backend.api.endpoints.get_posting_with_public_stats')
+    @patch('backend.api.endpoints.get_posting_by_hash')
+    @patch('backend.api.endpoints.track_posting_view')
+    def test_view_posting_owner_cannot_apply(self, mock_track_view, mock_get_by_hash, 
+                                           mock_get_stats, mock_get_session):
+        """Test view_posting shows owner cannot apply to own posting"""
+        from backend.api.endpoints import view_posting
+        
+        # Mock authenticated user who owns the posting
+        mock_get_session.return_value = {"user_id": 42}
+        
+        # Mock posting data - same user owns it
+        posting_data = {"id": 1, "title": "Job 1", "user_id": 42}
+        mock_get_by_hash.return_value = posting_data
+        mock_get_stats.return_value = posting_data
+        
+        # Mock request
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "session_token"
+        mock_request.client.host = "127.0.0.1"
+        mock_request.headers.get.return_value = "Test User Agent"
+        
+        result = asyncio.run(view_posting("hash123", mock_request))
+        
+        # Verify owner logic
+        assert result["is_authenticated"] is True
+        assert result["is_owner"] is True  # User owns the posting
+        assert result["has_applied"] is False  # Not applicable for owner
+        assert result["can_apply"] is False  # Owner can't apply to own posting
+    
+    @patch('backend.api.endpoints.get_session_user')
+    @patch('backend.api.endpoints.get_posting_with_public_stats')
+    @patch('backend.api.endpoints.get_posting_by_hash')
+    @patch('backend.api.endpoints.track_posting_view')
+    def test_view_posting_unauthenticated_user(self, mock_track_view, mock_get_by_hash, 
+                                             mock_get_stats, mock_get_session):
+        """Test view_posting for unauthenticated user"""
+        from backend.api.endpoints import view_posting
+        
+        # Mock no authenticated user
+        mock_get_session.return_value = None
+        
+        # Mock posting data
+        posting_data = {"id": 1, "title": "Job 1", "user_id": 18}
+        mock_get_by_hash.return_value = posting_data
+        mock_get_stats.return_value = posting_data
+        
+        # Mock request
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+        mock_request.client.host = "127.0.0.1"
+        mock_request.headers.get.return_value = "Test User Agent"
+        
+        result = asyncio.run(view_posting("hash123", mock_request))
+        
+        # Verify unauthenticated user logic
+        assert result["is_authenticated"] is False
+        assert result["is_owner"] is False
+        assert result["has_applied"] is False
+        assert result["can_apply"] is False

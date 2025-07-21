@@ -928,3 +928,94 @@ def test_view_tracking_with_session_data(mock_get_db):
     
     assert insert_call is not None
     assert "session123" in str(insert_call)
+
+
+@patch('backend.core.db.get_db_connection')
+def test_check_user_application_exists_true(mock_get_db):
+    """Test check_user_application_exists returns True when application exists"""
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_get_db.return_value = mock_conn
+    mock_conn.__enter__.return_value = mock_conn
+    mock_conn.cursor.return_value = mock_cursor
+    mock_cursor.__enter__.return_value = mock_cursor
+    
+    # Mock application exists
+    mock_cursor.fetchone.return_value = {"id": 1}
+    
+    result = db.check_user_application_exists(user_id=42, posting_id=1)
+    
+    assert result is True
+    mock_cursor.execute.assert_called_once_with(
+        "SELECT 1 FROM applications WHERE user_id = %s AND posting_id = %s",
+        (42, 1)
+    )
+
+
+@patch('backend.core.db.get_db_connection')
+def test_check_user_application_exists_false(mock_get_db):
+    """Test check_user_application_exists returns False when no application exists"""
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_get_db.return_value = mock_conn
+    mock_conn.__enter__.return_value = mock_conn
+    mock_conn.cursor.return_value = mock_cursor
+    mock_cursor.__enter__.return_value = mock_cursor
+    
+    # Mock no application exists
+    mock_cursor.fetchone.return_value = None
+    
+    result = db.check_user_application_exists(user_id=42, posting_id=1)
+    
+    assert result is False
+    mock_cursor.execute.assert_called_once_with(
+        "SELECT 1 FROM applications WHERE user_id = %s AND posting_id = %s",
+        (42, 1)
+    )
+
+
+@patch('backend.core.db.get_db_connection')
+def test_get_applications_by_user_with_details(mock_get_db):
+    """Test enhanced get_applications_by_user returns detailed application info"""
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_get_db.return_value = mock_conn
+    mock_conn.__enter__.return_value = mock_conn
+    mock_conn.cursor.return_value = mock_cursor
+    mock_cursor.__enter__.return_value = mock_cursor
+    
+    # Mock detailed application data
+    expected_applications = [
+        {
+            "id": 1,
+            "user_id": 42,
+            "posting_id": 1,
+            "message": "I'm interested",
+            "applied_at": "2025-01-21 10:00:00",
+            "status": "pending",
+            "cover_letter": "Dear employer...",
+            "title": "Software Developer",
+            "post_description": "Great opportunity",
+            "category": "Tech",
+            "posting_created_at": "2025-01-20 09:00:00",
+            "posting_hash": "abc123",
+            "posting_creator_name": "John Employer"
+        }
+    ]
+    mock_cursor.fetchall.return_value = expected_applications
+    
+    result = db.get_applications_by_user(user_id=42)
+    
+    assert result == expected_applications
+    mock_cursor.execute.assert_called_once()
+    
+    # Verify the SQL includes all the new fields
+    sql_call = mock_cursor.execute.call_args[0][0]
+    assert "applications.*" in sql_call
+    assert "postings.title" in sql_call
+    assert "postings.post_description" in sql_call
+    assert "postings.category" in sql_call
+    assert "postings.created_at as posting_created_at" in sql_call
+    assert "postings.hash as posting_hash" in sql_call
+    assert "users.name as posting_creator_name" in sql_call
+    assert "ORDER BY applications.applied_at DESC" in sql_call
