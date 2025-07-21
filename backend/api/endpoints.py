@@ -4,6 +4,7 @@ from contextlib import suppress
 from core.cache import get_redis_client
 from core.db import (
     apply_to_posting,
+    check_user_application_exists,
     create_posting_in_db,
     create_user,
     delete_posting_from_db,
@@ -122,18 +123,66 @@ async def create_posting(
     create_posting_in_db(title, post_description, category, user_id)
     return RedirectResponse(url="/my-postings.html?success=posting_created", status_code=303)
 
-@api_router.put("/postings")
+@api_router.post("/postings/update")
 async def update_posting(
+    request: Request,
     posting_id: int = Form(...),
-    title: str = Form(None),
-    category: str = Form(None),
-    post_description: str = Form(None),
-    status: str = Form(None)
+    title: str = Form(...),
+    category: str = Form(...),
+    post_description: str = Form(...),
+    status: str = Form(...)
 ):
-    success = update_posting_in_db(posting_id, title, category, post_description, status)
-    if not success:
+    session_token = request.cookies.get("session_token")
+    session_data = get_session_user(session_token)
+    
+    if not session_data:
+        return RedirectResponse(url="/login.html?error=auth_required", status_code=303)
+    
+    try:
+        # Check if user owns this posting before updating
+        user_id = session_data["user_id"]
+        posting = get_posting_by_id(posting_id)
+        
+        if not posting or posting["user_id"] != user_id:
+            return RedirectResponse(url="/my-postings.html?error=access_denied", status_code=303)
+        
+        success = update_posting_in_db(posting_id, title, category, post_description, status)
+        if not success:
+            return RedirectResponse(url="/my-postings.html?error=update_failed", status_code=303)
+        
+        return RedirectResponse(url="/my-postings.html?success=posting_updated", status_code=303)
+    except Exception:
+        return RedirectResponse(url="/my-postings.html?error=update_failed", status_code=303)
+
+@api_router.get("/posting/{posting_id}/manage")
+async def get_posting_for_edit(posting_id: int, request: Request):
+    """Get posting data for editing (API endpoint)"""
+    session_token = request.cookies.get("session_token")
+    session_data = get_session_user(session_token)
+    
+    if not session_data:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    user_id = session_data["user_id"]
+    posting = get_posting_by_id(posting_id)
+    
+    if not posting:
         raise HTTPException(status_code=404, detail="Posting not found")
-    return JSONResponse(content={"message": "Posting updated successfully"})
+    
+    # Check if user owns this posting
+    if posting["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Return posting data as JSON for frontend to consume
+    return JSONResponse(content={
+        "posting": {
+            "id": posting["id"],
+            "title": posting["title"],
+            "category": posting["category"],
+            "description": posting["description"],
+            "status": posting.get("status", "open")
+        }
+    })
 
 @api_router.delete("/postings")
 async def delete_posting(posting_id: int = Form(...)):
@@ -204,20 +253,38 @@ async def apply(
     message: str = Form(None), 
     cover_letter: str = Form(None)
 ):
+    logger.info(f"Application received for posting {posting_id}, message: {message[:50] if message else 'None'}")
+    
     session_token = request.cookies.get("session_token")
     session_data = get_session_user(session_token)
     
     if not session_data:
+        logger.warning(f"Unauthenticated application attempt for posting {posting_id}")
         return RedirectResponse(url="/login.html?error=auth_required", status_code=303)
     
     user_id = session_data["user_id"]
-    result = apply_to_posting(user_id, posting_id, message, cover_letter)
     
-    if not result["success"]:
-        error_param = result["error"] if result["error"] else "application_failed"
-        return RedirectResponse(url=f"/posting-detail.html?id={posting_id}&error={error_param}", status_code=303)
-    
-    return RedirectResponse(url=f"/posting-detail.html?id={posting_id}&success=application_submitted", status_code=303)
+    try:
+        result = apply_to_posting(user_id, posting_id, message, cover_letter)
+        
+        # Get posting hash for proper redirect
+        posting = get_posting_by_id(posting_id)
+        if not posting:
+            return RedirectResponse(url="/my-postings.html?error=posting_not_found", status_code=303)
+        
+        posting_hash = posting["hash"]
+        
+        if not result["success"]:
+            error_param = result["error"] if result["error"] else "application_failed"
+            logger.warning(f"Application failed for posting {posting_id}, user {user_id}: {result['error']}")
+            return RedirectResponse(url=f"/posting-detail.html?hash={posting_hash}&error={error_param}", status_code=303)
+        
+        logger.info(f"Application successful for posting {posting_id}, user {user_id}")
+        return RedirectResponse(url=f"/posting-detail.html?hash={posting_hash}&success=application_submitted", status_code=303)
+        
+    except Exception:
+        # Log the error and redirect with generic error
+        return RedirectResponse(url="/my-postings.html?error=application_failed", status_code=303)
 
 @api_router.get("/applications/by_user/{user_id}")
 async def api_get_applications_by_user(user_id: int):
@@ -266,10 +333,13 @@ async def view_posting(posting_hash: str, request: Request):
     is_authenticated = bool(session_data)
     is_owner = False
     can_apply = False
+    has_applied = False
     
     if is_authenticated:
         is_owner = posting_with_stats["user_id"] == session_data["user_id"]
-        can_apply = not is_owner
+        if not is_owner:
+            has_applied = check_user_application_exists(session_data["user_id"], posting_with_stats["id"])
+            can_apply = not has_applied
     
     # Return enhanced data for frontend
     return {
@@ -277,6 +347,7 @@ async def view_posting(posting_hash: str, request: Request):
         "is_authenticated": is_authenticated,
         "is_owner": is_owner,
         "can_apply": can_apply,
+        "has_applied": has_applied,
         "user": session_data
     }
 

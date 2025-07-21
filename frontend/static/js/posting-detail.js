@@ -69,12 +69,36 @@ function displayPostingDetails(data) {
             `;
         } else if (data.can_apply) {
             actionContainer.innerHTML = `
-                <form action="/api/applications" method="post" style="display: inline;">
-                    <input type="hidden" name="posting_id" value="${posting.id}">
-                    <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="bi bi-envelope me-2"></i>Apply Now
-                    </button>
-                </form>
+                <button type="button" class="btn btn-primary btn-lg" onclick="showApplicationForm()">
+                    <i class="bi bi-envelope me-2"></i>Apply Now
+                </button>
+                <div id="application-form" style="display: none;" class="mt-3 p-3 border rounded">
+                    <h5>Apply for this Position</h5>
+                    <form action="/api/applications" method="post">
+                        <input type="hidden" name="posting_id" value="${posting.id}">
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Message (Optional)</label>
+                            <textarea class="form-control" name="message" rows="3" placeholder="Brief message to the employer..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="cover_letter" class="form-label">Cover Letter (Optional)</label>
+                            <textarea class="form-control" name="cover_letter" rows="5" placeholder="Tell them why you're interested in this position..."></textarea>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">Submit Application</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideApplicationForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+        } else if (data.has_applied) {
+            actionContainer.innerHTML = `
+                <div class="alert alert-success" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>You have already applied to this position
+                </div>
+                <button class="btn btn-outline-secondary" disabled>
+                    <i class="bi bi-check me-2"></i>Application Submitted
+                </button>
             `;
         } else if (!data.is_authenticated) {
             actionContainer.innerHTML = `
@@ -86,12 +110,35 @@ function displayPostingDetails(data) {
     } else {
         // Fallback for old format
         actionContainer.innerHTML = `
-            <form action="/api/applications" method="post" style="display: inline;">
-                <input type="hidden" name="posting_id" value="${posting.id}">
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="bi bi-envelope me-2"></i>Apply Now
-                </button>
-            </form>
+            <button type="button" class="btn btn-primary btn-lg" onclick="showApplicationForm()">
+                <i class="bi bi-envelope me-2"></i>Apply Now
+            </button>
+            <div id="application-form" style="display: none;" class="mt-3 p-3 border rounded">
+                <h5>Apply for this Position</h5>
+                <form action="/api/applications" method="post">
+                    <input type="hidden" name="posting_id" value="${posting.id}">
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message (Optional)</label>
+                        <textarea class="form-control" name="message" rows="3" placeholder="Brief message to the employer..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cover_letter" class="form-label">Cover Letter (Optional)</label>
+                        <textarea class="form-control" name="cover_letter" rows="5" placeholder="Tell them why you're interested in this position..."></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">Submit Application</button>
+                        <button type="button" class="btn btn-secondary" onclick="hideApplicationForm()">Cancel</button>
+                    </div>
+                </form>
+            </div>
         `;
     }
+}
+
+function showApplicationForm() {
+    document.getElementById('application-form').style.display = 'block';
+}
+
+function hideApplicationForm() {
+    document.getElementById('application-form').style.display = 'none';
 }

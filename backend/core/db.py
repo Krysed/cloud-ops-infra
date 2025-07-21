@@ -217,12 +217,30 @@ def apply_to_posting(user_id: int, posting_id: int, message: str = None, cover_l
 def get_applications_by_user(user_id):
     with get_db_connection() as conn, conn.cursor() as cursor:
         cursor.execute("""
-            SELECT applications.*, postings.title 
+            SELECT 
+                applications.*,
+                postings.title,
+                postings.post_description,
+                postings.category,
+                postings.created_at as posting_created_at,
+                postings.hash as posting_hash,
+                users.name as posting_creator_name
             FROM applications 
             JOIN postings ON applications.posting_id = postings.id 
+            JOIN users ON postings.user_id = users.id
             WHERE applications.user_id = %s
+            ORDER BY applications.applied_at DESC
         """, (user_id,))
         return cursor.fetchall()
+
+def check_user_application_exists(user_id: int, posting_id: int) -> bool:
+    """Check if a user has already applied to a specific posting"""
+    with get_db_connection() as conn, conn.cursor() as cursor:
+        cursor.execute(
+            "SELECT 1 FROM applications WHERE user_id = %s AND posting_id = %s",
+            (user_id, posting_id)
+        )
+        return cursor.fetchone() is not None
 
 def get_applications_by_posting(posting_id):
     with get_db_connection() as conn, conn.cursor() as cursor:
@@ -400,7 +418,7 @@ def get_posting_with_public_stats(posting_id: int) -> dict:
             FROM postings p
             JOIN users u ON p.user_id = u.id
             LEFT JOIN applications a ON p.id = a.posting_id
-            WHERE p.id = %s AND p.status = 'active'
+            WHERE p.id = %s
             GROUP BY p.id, u.name, u.username
         """, (posting_id,))
         return cursor.fetchone()
@@ -452,7 +470,7 @@ def get_public_postings():
                 p.status,
                 u.name as creator_name,
                 u.username as creator_username,
-                COUNT(DISTINCT a.id) as applications_count
+                COUNT(DISTINCT a.id) as application_count
             FROM postings p
             JOIN users u ON p.user_id = u.id
             LEFT JOIN applications a ON p.id = a.posting_id

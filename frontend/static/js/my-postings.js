@@ -29,7 +29,7 @@ function displayPostings(postings) {
         // Generate HTML based on backend data
         const statusBadge = `<span class="badge bg-success">${posting.status}</span>`;
         const viewsBadge = `<span class="badge bg-info">${posting.views || 0}</span>`;
-        const applicationsBadge = `<span class="badge bg-success">${posting.applications_count || 0}</span>`;
+        const applicationsBadge = `<span class="badge bg-success">${posting.application_count || 0}</span>`;
         const actionButton = `<a href="/posting-detail.html?hash=${posting.hash || posting.id}" class="btn btn-outline-primary btn-sm">View</a>`;
         
         html += `
