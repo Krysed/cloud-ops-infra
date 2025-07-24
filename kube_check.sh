@@ -10,7 +10,6 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Project root directory
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 K8S_DIR="${PROJECT_ROOT}/k8s"
 
@@ -65,38 +64,62 @@ build_images() {
     echo -e "${YELLOW}Building redis image...${NC}"
     docker build -t infra-redis:latest "${PROJECT_ROOT}/redis"
     
+    echo -e "${YELLOW}Building redis image...${NC}"
+    docker build -t infra-grafana:latest "${PROJECT_ROOT}/grafana"
+    
+    echo -e "${YELLOW}Building redis image...${NC}"
+    docker build -t infra-loki:latest "${PROJECT_ROOT}/loki"
+    
+    echo -e "${YELLOW}Building redis image...${NC}"
+    docker build -t infra-mimir:latest "${PROJECT_ROOT}/mimir"
+    
+    echo -e "${YELLOW}Building redis image...${NC}"
+    docker build -t infra-tempo:latest "${PROJECT_ROOT}/tempo"
+    
     echo -e "${GREEN}All images built successfully${NC}"
 }
 
-# Main deployment function
 deploy_resources() {
     echo -e "${BLUE}Deploying Kubernetes resources in order...${NC}"
     
-    # 1. Create namespace first
+    # Create namespace
     echo -e "${YELLOW}1. Creating namespace...${NC}"
     kubectl apply -f "${K8S_DIR}/namespace.yaml"
     
-    # 2. Storage (PVs are cluster-wide, PVCs are namespaced)
+    # Storage (PVs are cluster-wide, PVCs are namespaced)
     echo -e "${YELLOW}2. Creating persistent volumes...${NC}"
     kubectl apply -f "${K8S_DIR}/postgres/postgres-pv.yaml"
     kubectl apply -f "${K8S_DIR}/redis/redis-pv.yaml"
+    kubectl apply -f "${K8S_DIR}/grafana/grafana-pv.yaml"
+    kubectl apply -f "${K8S_DIR}/loki/loki-pv.yaml"
+    kubectl apply -f "${K8S_DIR}/mimir/mimir-pv.yaml"
+    kubectl apply -f "${K8S_DIR}/tempo/tempo-pv.yaml"
     
-    # 3. Secrets and configs
+    # Secrets and configs
     echo -e "${YELLOW}3. Creating secrets and configmaps...${NC}"
     kubectl apply -f "${K8S_DIR}/backend/backend-secret.yaml"
     kubectl apply -f "${K8S_DIR}/backend/backend-configmap.yaml"
     kubectl apply -f "${K8S_DIR}/postgres/postgres-secret.yaml"
     kubectl apply -f "${K8S_DIR}/postgres/postgres-configmap.yaml"
     kubectl apply -f "${K8S_DIR}/redis/redis-secret.yaml"
-    
-    # 4. Services (before deployments for DNS)
+    kubectl apply -f "${K8S_DIR}/grafana/grafana-secret.yaml"
+    kubectl apply -f "${K8S_DIR}/grafana/grafana-configmap.yaml"
+    kubectl apply -f "${K8S_DIR}/loki/loki-configmap.yaml"
+    kubectl apply -f "${K8S_DIR}/mimir/mimir-configmap.yaml"
+    kubectl apply -f "${K8S_DIR}/tempo/tempo-configmap.yaml"
+
+    # Services (before deployments for DNS)
     echo -e "${YELLOW}4. Creating services...${NC}"
     kubectl apply -f "${K8S_DIR}/postgres/postgres-service.yaml"
     kubectl apply -f "${K8S_DIR}/redis/redis-service.yaml"
     kubectl apply -f "${K8S_DIR}/backend/backend-service.yaml"
     kubectl apply -f "${K8S_DIR}/frontend/frontend-service.yaml"
+    kubectl apply -f "${K8S_DIR}/grafana/grafana-service.yaml"
+    kubectl apply -f "${K8S_DIR}/loki/loki-service.yaml"
+    kubectl apply -f "${K8S_DIR}/mimir/mimir-service.yaml"
+    kubectl apply -f "${K8S_DIR}/tempo/tempo-service.yaml"
     
-    # 5. Workloads (StatefulSets first, then Deployments)
+    # Workloads (StatefulSets first, then Deployments)
     echo -e "${YELLOW}5. Creating workloads...${NC}"
     
     # StatefulSets first
@@ -120,8 +143,27 @@ deploy_resources() {
     echo -e "${YELLOW}   - Nginx Deployment...${NC}"
     kubectl apply -f "${K8S_DIR}/nginx/nginx-deployment.yaml"
     wait_for_resource "deployment" "nginx-deployment"
+        
+    echo -e "${YELLOW}   - Grafana Deployment...${NC}"
+    kubectl apply -f "${K8S_DIR}/grafana/grafana-deployment.yaml"
+    wait_for_resource "deployment" "grafana-deployment"
     
-    # 6. External access
+        
+    echo -e "${YELLOW}   - Loki Deployment...${NC}"
+    kubectl apply -f "${K8S_DIR}/loki/loki-deployment.yaml"
+    wait_for_resource "deployment" "loki-deployment"
+    
+        
+    echo -e "${YELLOW}   - Mimir Deployment...${NC}"
+    kubectl apply -f "${K8S_DIR}/mimir/mimir-deployment.yaml"
+    wait_for_resource "deployment" "mimir-deployment"
+    
+        
+    echo -e "${YELLOW}   - Tempo Deployment...${NC}"
+    kubectl apply -f "${K8S_DIR}/tempo/tempo-deployment.yaml"
+    wait_for_resource "deployment" "tempo-deployment"
+    
+    # External access
     echo -e "${YELLOW}6. Creating external access...${NC}"
     kubectl apply -f "${K8S_DIR}/nginx/nginx-service.yaml"
     
@@ -163,7 +205,7 @@ show_status() {
 cleanup() {
     echo -e "${RED}Cleaning up all resources...${NC}"
     kubectl delete namespace dev --ignore-not-found=true
-    kubectl delete pv postgres-pv redis-pv --ignore-not-found=true
+    kubectl delete pv postgres-pv redis-pv grafana-pv loki-pv mimir-pv tempo-pv --ignore-not-found=true
     echo -e "${GREEN}Cleanup completed${NC}"
 }
 
