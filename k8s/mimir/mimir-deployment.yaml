@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mimir-deployment
+  namespace: dev
+  labels:
+    app: myapp
+    component: mimir
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mimir
+  template:
+    metadata:
+      labels:
+        app: mimir
+    spec:
+      containers:
+      - name: mimir
+        image: infra-mimir:latest
+        imagePullPolicy: Never  # For local minikube images
+        ports:
+        - containerPort: 8080
+          name: mimir-http
+        args:
+          - "-target=all"
+        envFrom:
+        - configMapRef:
+            name: mimir-config
+        volumeMounts:
+        - name: mimir-data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 45
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: mimir-data
+        emptyDir: {}
