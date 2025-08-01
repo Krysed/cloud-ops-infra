@@ -10,7 +10,12 @@ spec:
   selector:
     app: tempo
   ports:
-    - protocol: TCP
+    - name: tempo-http
+      protocol: TCP
       port: 3200
       targetPort: 3200
+    - name: otlp-grpc
+      protocol: TCP
+      port: 4317
+      targetPort: 4317
   type: ClusterIP

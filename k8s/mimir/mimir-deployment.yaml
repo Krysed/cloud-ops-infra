@@ -24,6 +24,7 @@ spec:
         - containerPort: 8080
           name: mimir-http
         args:
+          - "-config.file=/etc/mimir/mimir.yaml"
           - "-target=all"
         envFrom:
         - configMapRef:
