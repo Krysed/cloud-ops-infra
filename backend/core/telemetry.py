@@ -14,7 +14,7 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 
-def configure_telemetry(app_name: str = "fastapi-app"):
+def configure_telemetry(app_name: str = "fastapi-backend"):
     """
     Configure OpenTelemetry for traces and metrics.
     All data goes to self-hosted LGTM stack - NO external services.
@@ -22,7 +22,11 @@ def configure_telemetry(app_name: str = "fastapi-app"):
     
     tempo_endpoint = os.getenv('TEMPO_ENDPOINT', 'http://tempo:4317')
     trace_provider = TracerProvider(
-        resource=Resource.create({"service.name": app_name})
+        resource=Resource.create({
+            "service.name": app_name,
+            "service.version": "1.0.0",
+            "deployment.environment": "dev"
+        })
     )
     
     # Export traces to your Tempo instance
@@ -40,7 +44,11 @@ def configure_telemetry(app_name: str = "fastapi-app"):
     # configure metrics with Mimir by /metrics endpoint
     prometheus_reader = PrometheusMetricReader()  # Creates /metrics endpoint for Mimir to scrape    
     metric_provider = MeterProvider(
-        resource=Resource.create({"service.name": app_name}),
+        resource=Resource.create({
+            "service.name": app_name,
+            "service.version": "1.0.0",
+            "deployment.environment": "dev"
+        }),
         metric_readers=[prometheus_reader]
     )
     
@@ -159,19 +167,14 @@ def instrument_app(app):
     Auto-instrument FastAPI app and database connections.
     """
     
-    # Initialize HTTP metrics first
-    init_http_metrics()
-    
-    # Add HTTP metrics middleware
-    app.add_middleware(HTTPMetricsMiddleware)
-    
-    # Auto instrument FastAPI - traces all HTTP requests
+    # Auto instrument FastAPI, traces all HTTP requests
     FastAPIInstrumentor.instrument_app(app)
     
-    # Auto instrument PostgreSQL queries
+    # Auto instrument database connections
     Psycopg2Instrumentor().instrument()
-    
-    # Auto instrument Redis operations
     RedisInstrumentor().instrument()
+
+    init_http_metrics()
+    app.add_middleware(HTTPMetricsMiddleware)
     
     print("OpenTelemetry instrumentation enabled with HTTP metrics, sending data to LGTM stack")
