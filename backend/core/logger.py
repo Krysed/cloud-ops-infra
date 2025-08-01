@@ -1,5 +1,6 @@
 import logging
 import os
+
 from logging_loki import LokiHandler
 
 # Create console handler

@@ -1,7 +1,7 @@
 from api import endpoints
+from core.telemetry import configure_telemetry, instrument_app
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from core.telemetry import configure_telemetry, instrument_app
 
 app = FastAPI(title="FastAPI App", version="1.0.0")
 

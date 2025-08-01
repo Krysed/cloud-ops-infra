@@ -33,7 +33,7 @@ from core.security import get_session_user, hash_password, login_user, logout_us
 from core.utility import json_serializer
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 router = APIRouter()
 api_router = APIRouter(prefix="/api")
