@@ -64,17 +64,20 @@ build_images() {
     echo -e "${YELLOW}Building redis image...${NC}"
     docker build -t infra-redis:latest "${PROJECT_ROOT}/redis"
     
-    echo -e "${YELLOW}Building redis image...${NC}"
+    echo -e "${YELLOW}Building grafana image...${NC}"
     docker build -t infra-grafana:latest "${PROJECT_ROOT}/grafana"
     
-    echo -e "${YELLOW}Building redis image...${NC}"
+    echo -e "${YELLOW}Building loki image...${NC}"
     docker build -t infra-loki:latest "${PROJECT_ROOT}/loki"
     
-    echo -e "${YELLOW}Building redis image...${NC}"
+    echo -e "${YELLOW}Building mimir image...${NC}"
     docker build -t infra-mimir:latest "${PROJECT_ROOT}/mimir"
     
-    echo -e "${YELLOW}Building redis image...${NC}"
+    echo -e "${YELLOW}Building tempo image...${NC}"
     docker build -t infra-tempo:latest "${PROJECT_ROOT}/tempo"
+    
+    echo -e "${YELLOW}Building prometheus image...${NC}"
+    docker build -t infra-prometheus:latest "${PROJECT_ROOT}/prometheus"
     
     echo -e "${GREEN}All images built successfully${NC}"
 }
@@ -107,6 +110,7 @@ deploy_resources() {
     kubectl apply -f "${K8S_DIR}/loki/loki-configmap.yaml"
     kubectl apply -f "${K8S_DIR}/mimir/mimir-configmap.yaml"
     kubectl apply -f "${K8S_DIR}/tempo/tempo-configmap.yaml"
+    kubectl apply -f "${K8S_DIR}/prometheus/prometheus-configmap.yaml"
 
     # Services (before deployments for DNS)
     echo -e "${YELLOW}4. Creating services...${NC}"
@@ -118,6 +122,7 @@ deploy_resources() {
     kubectl apply -f "${K8S_DIR}/loki/loki-service.yaml"
     kubectl apply -f "${K8S_DIR}/mimir/mimir-service.yaml"
     kubectl apply -f "${K8S_DIR}/tempo/tempo-service.yaml"
+    kubectl apply -f "${K8S_DIR}/prometheus/prometheus-service.yaml"
     
     # Workloads (StatefulSets first, then Deployments)
     echo -e "${YELLOW}5. Creating workloads...${NC}"
@@ -162,17 +167,21 @@ deploy_resources() {
     echo -e "${YELLOW}   - Tempo Deployment...${NC}"
     kubectl apply -f "${K8S_DIR}/tempo/tempo-deployment.yaml"
     wait_for_resource "deployment" "tempo-deployment"
+        
+    echo -e "${YELLOW}   - Prometheus Deployment...${NC}"
+    kubectl apply -f "${K8S_DIR}/prometheus/prometheus-deployment.yaml"
+    wait_for_resource "deployment" "prometheus-deployment"
     
     # External access
     echo -e "${YELLOW}6. Creating external access...${NC}"
     kubectl apply -f "${K8S_DIR}/nginx/nginx-service.yaml"
     
-    echo -e "${GREEN}✅ All resources deployed successfully!${NC}"
+    echo -e "${GREEN}All resources deployed successfully!${NC}"
 }
 
 # Function to show status
 show_status() {
-    echo -e "${BLUE}📊 Deployment Status:${NC}"
+    echo -e "${BLUE}Deployment Status:${NC}"
     echo ""
     
     echo -e "${YELLOW}Pods:${NC}"
