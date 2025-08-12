@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mimir-config
+  namespace: dev
+  labels:
+    app: myapp
+    component: mimir
+data:
+  MIMIR_HTTP_LISTEN_PORT: "8080"
+  MIMIR_LOG_LEVEL: "info"
+  MIMIR_MULTITENANCY_ENABLED: "false"
+  MIMIR_STORAGE_BACKEND: "filesystem"
+  MIMIR_STORAGE_FILESYSTEM_DIR: "/data"
+  MIMIR_BLOCKS_STORAGE_DIR: "/data/blocks"
+  MIMIR_COMPACTOR_DATA_DIR: "/data/compactor"
+  MIMIR_RULER_DATA_DIR: "/data/ruler"
+  MIMIR_ALERTMANAGER_DATA_DIR: "/data/alertmanager"

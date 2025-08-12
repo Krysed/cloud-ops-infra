@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tempo-deployment
+  namespace: dev
+  labels:
+    app: myapp
+    component: tempo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tempo
+  template:
+    metadata:
+      labels:
+        app: tempo
+    spec:
+      containers:
+      - name: tempo
+        image: infra-tempo:latest
+        imagePullPolicy: Never  # For local minikube images
+        ports:
+        - containerPort: 3200
+          name: tempo-http
+        - containerPort: 14268
+          name: jaeger-ingest
+        - containerPort: 9411
+          name: zipkin
+        - containerPort: 4317
+          name: otlp-grpc
+        - containerPort: 4318
+          name: otlp-http
+        args:
+          - "-config.file=/etc/tempo/tempo.yaml"
+        volumeMounts:
+        - name: tempo-data
+          mountPath: /tmp/tempo
+        - name: tempo-config-volume
+          mountPath: /etc/tempo
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: 3200
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3200
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: tempo-data
+        emptyDir: {}
+      - name: tempo-config-volume
+        configMap:
+          name: tempo-config
+          items:
+          - key: tempo.yaml
+            path: tempo.yaml

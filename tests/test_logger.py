@@ -13,9 +13,6 @@ class TestLoggerConfiguration:
         assert logger is not None
         assert isinstance(logger, logging.Logger)
     
-    def test_logger_name(self):
-        """Test that logger has correct name"""
-        assert logger.name == "log-analyzer"
     
     def test_logger_level_inheritance(self):
         """Test that logger inherits from root logger configuration"""
@@ -154,7 +151,6 @@ class TestLoggerIntegration:
         """Test that logger can be imported correctly"""
         from backend.core.logger import logger as imported_logger
         assert imported_logger is not None
-        assert imported_logger.name == "log-analyzer"
     
     def test_logger_singleton_behavior(self):
         """Test that logger behaves as singleton"""

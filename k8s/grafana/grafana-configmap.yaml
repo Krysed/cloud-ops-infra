@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: dev
+  labels:
+    app: myapp
+    component: grafana
+data:
+  # Grafana configuration
+  GF_SECURITY_ADMIN_USER: "admin"
+  GF_USERS_ALLOW_SIGN_UP: "false"
+  GF_SERVER_HTTP_PORT: "3000"
+  GF_SERVER_PROTOCOL: "http"
+  GF_LOG_LEVEL: "info"
+  GF_EXPLORE_ENABLED: "true"
+  # Data source settings
+  GF_INSTALL_PLUGINS: ""
