@@ -2,7 +2,6 @@ import secrets
 import string
 from contextlib import contextmanager
 from datetime import UTC, datetime
-from typing import Optional
 
 import psycopg2
 import psycopg2.extras
@@ -63,7 +62,7 @@ def get_user_by_id(user_id: int):
         cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
         return cursor.fetchone()
 
-def update_user_in_db(user_id: int, name: Optional[str] = None, surname: Optional[str] = None, username: Optional[str] = None, email: Optional[str] = None) -> bool:
+def update_user_in_db(user_id: int, name: str | None = None, surname: str | None = None, username: str | None = None, email: str | None = None) -> bool:
     with get_db_connection() as conn, conn.cursor() as cursor:
         cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
         if not cursor.fetchone():
@@ -107,7 +106,7 @@ def create_posting_in_db(title: str, post_description: str, category: str, user_
         conn.commit()
         return row["hash"] # posting hash
 
-def update_posting_in_db(posting_id: int, title: Optional[str] = None, category: Optional[str] = None, post_description: Optional[str] = None, status: Optional[str] = None) -> bool:
+def update_posting_in_db(posting_id: int, title: str | None = None, category: str | None = None, post_description: str | None = None, status: str | None = None) -> bool:
     with get_db_connection() as conn, conn.cursor() as cursor:
         cursor.execute("SELECT id FROM postings WHERE id = %s", (posting_id,))
         if not cursor.fetchone():
@@ -175,7 +174,7 @@ def get_postings_by_user(user_id):
         """, (user_id,))
         return cursor.fetchall()
 
-def apply_to_posting(user_id: int, posting_id: int, message: Optional[str] = None, cover_letter: Optional[str] = None) -> dict:
+def apply_to_posting(user_id: int, posting_id: int, message: str | None = None, cover_letter: str | None = None) -> dict:
     with get_db_connection() as conn, conn.cursor() as cursor:
         # Check if posting exists and get the posting owner
         cursor.execute("SELECT id, user_id FROM postings WHERE id = %s", (posting_id,))
@@ -255,7 +254,7 @@ def get_applications_by_posting(posting_id):
 
 # Analytics and View Tracking Functions
 
-def track_posting_view(posting_id: int, user_id: Optional[int] = None, ip_address: Optional[str] = None, user_agent: Optional[str] = None, session_id: Optional[str] = None) -> bool:
+def track_posting_view(posting_id: int, user_id: int | None = None, ip_address: str | None = None, user_agent: str | None = None, session_id: str | None = None) -> bool:
     """Track a view of a posting and determine if it's unique"""
     with get_db_connection() as conn, conn.cursor() as cursor:
         # Check if this is a unique view (same user/session within 24 hours)
@@ -424,7 +423,7 @@ def get_posting_with_public_stats(posting_id: int) -> dict:
         """, (posting_id,))
         return cursor.fetchone()
 
-def update_application_status(application_id: int, status: str, reviewer_notes: Optional[str] = None) -> bool:
+def update_application_status(application_id: int, status: str, reviewer_notes: str | None = None) -> bool:
     """Update application status (for posting owners)"""
     with get_db_connection() as conn, conn.cursor() as cursor:
         cursor.execute("""
