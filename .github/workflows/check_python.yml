@@ -12,8 +12,6 @@ jobs:
           fetch-depth: 0
       - name: Scan for secrets
         uses: gitleaks/gitleaks-action@v2
-        with:
-            command: "detect --source . --verbose"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
