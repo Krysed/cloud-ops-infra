@@ -35,7 +35,7 @@ wait_for_resource() {
 check_minikube() {
     if ! minikube status > /dev/null 2>&1; then
         echo -e "${RED}Minikube is not running. Please start it first:${NC}"
-        echo "minikube start --memory=4096 --cpus=2"
+        echo "minikube start"
         exit 1
     fi
     echo -e "${GREEN}Minikube is running${NC}"
