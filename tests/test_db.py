@@ -297,7 +297,7 @@ def test_get_posting_analytics_not_owner(mock_get_db):
     
     result = db.get_posting_analytics(1, 42)
     
-    assert result is None
+    assert result == {}
 
 
 @patch('backend.core.db.get_db_connection')
@@ -315,7 +315,7 @@ def test_get_posting_analytics_not_found(mock_get_db):
     
     result = db.get_posting_analytics(999, 42)
     
-    assert result is None
+    assert result == {}
 
 
 @patch('backend.core.db.get_db_connection')
