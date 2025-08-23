@@ -1,0 +1,96 @@
+- hosts: all
+  become: true
+  vars:
+    jenkins_data_dir: /var/jenkins_home
+    jenkins_old_dir: /var/lib/jenkins
+
+  tasks:
+    - name: Install dependencies
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      loop:
+        - gnupg
+        - curl
+        - apt-transport-https
+        - ca-certificates
+        - software-properties-common
+
+    - name: Install Java 17
+      apt:
+        name: openjdk-17-jdk
+        state: present
+
+    - name: Set JAVA_HOME
+      lineinfile:
+        path: /etc/environment
+        line: 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64'
+        create: yes
+
+    - name: Source environment
+      shell: source /etc/environment
+      args:
+        executable: /bin/bash
+
+    - name: Add Jenkins key
+      get_url:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        dest: /usr/share/keyrings/jenkins-keyring.asc
+        mode: '0644'
+
+    - name: Add Jenkins repository
+      apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+        state: present
+
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+        update_cache: yes
+
+    - name: Stop Jenkins before migration
+      systemd:
+        name: jenkins
+        state: stopped
+        enabled: yes
+
+    - name: Ensure Jenkins data directory exists
+      file:
+        path: "{{ jenkins_data_dir }}"
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: '0755'
+
+    - name: Move existing Jenkins data if present
+      command: mv "{{ jenkins_old_dir }}" "{{ jenkins_data_dir }}/backup_$(date +%s)"
+      args:
+        removes: "{{ jenkins_old_dir }}"
+      ignore_errors: true
+
+    - name: Remove old Jenkins directory if exists
+      file:
+        path: "{{ jenkins_old_dir }}"
+        state: absent
+
+    - name: Create symlink for Jenkins data
+      file:
+        src: "{{ jenkins_data_dir }}"
+        dest: "{{ jenkins_old_dir }}"
+        state: link
+
+    - name: Fix permissions on Jenkins data
+      file:
+        path: "{{ jenkins_data_dir }}"
+        state: directory
+        owner: jenkins
+        group: jenkins
+        recurse: yes
+
+    - name: Start Jenkins service
+      systemd:
+        name: jenkins
+        state: started
+        enabled: yes
