@@ -5,7 +5,7 @@ set -euo pipefail
 venv_directory=".venv"
 install_scripts_path="$(pwd)/install_scripts"
 
-linux_deps=("pip" "pipx" "curl" "jq" "python3" "uvicorn" "docker" "terraform" "kubectl" "minikube")
+linux_deps=("pip" "pipx" "curl" "jq" "python3" "uvicorn" "docker" "virtualbox" "terraform" "kubectl" "minikube")
 install_command="sudo apt-get install -y"
 
 function install_tech () 
@@ -69,3 +69,7 @@ check_and_move_dir "$(pwd)/frontend/static/images/" "2136_kool_form_pack/images/
 check_and_move_dir "$(pwd)/frontend/static/videos/" "2136_kool_form_pack/videos/"
 check_and_move_dir "$(pwd)/frontend/static/fonts/" "2136_kool_form_pack/fonts/"
 rm -rf 2136_kool_form_pack/
+
+if [[ ! -d "jenkins_data" ]];then
+    mkdir -p "jenkins_data"
+fi
