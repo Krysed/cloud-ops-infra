@@ -17,3 +17,5 @@ ruff
 pytest
 pytest-cov
 bandit
+mypy
+types-psycopg2

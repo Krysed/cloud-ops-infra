@@ -25,3 +25,6 @@ jobs:
 
       - name: Run Python Security check
         run: bandit -r backend/
+
+      - name: Run mypy Static analisys
+        run: mypy backend/ --explicit-package-bases
