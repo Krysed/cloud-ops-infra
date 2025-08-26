@@ -1,0 +1,100 @@
+pipeline{
+    agent {
+        docker {
+            image 'python:alpine3.21'
+            args '-u root'
+        }
+    }    
+    environment {
+        ENV = 'dev'
+    }
+    stages{
+        stage("Checkout code"){
+            steps{
+                echo "Cloning repository"
+                git url: 'https://github.com/Krysed/cloud-ops-infra.git' 
+            }
+            post{
+                success {
+                    echo 'Cloned repository successfully.'
+                }
+                failure {
+                    echo 'Cloning repository failed!'
+                }
+            }
+        }
+        stage("Install dependencies") {
+            steps {
+                sh '''
+                    apk add --no-cache gcc musl-dev libffi-dev
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                    pip install -r backend/requirements.txt
+                '''
+            }
+        }
+        stage("Run ruff linter") {
+            steps {
+                sh 'ruff check .'
+            }
+            post {
+                success {
+                    echo 'Ruff check passed successfully.'
+                }
+                failure {
+                    echo 'Ruff check failed.'
+                }
+            }
+        }
+        stage("Run pytest") {
+            steps {
+                sh 'pytest --cov --cov-report=term-missing'
+            }
+            post {
+                success {
+                    echo 'Pytest finished.'
+                }
+                failure {
+                    echo 'Pytest failed.'
+                }
+            }
+        }
+        stage("Run bandit Security Check") {
+            steps {
+                sh 'bandit -r backend/'
+            }
+            post {
+                success {
+                    echo 'Bandit check finished.'
+                }
+                failure {
+                    echo 'Bandit check failed.'
+                }
+            }
+        }
+        stage("Run mypy static analysis") {
+            steps {
+                sh 'mypy backend/ --explicit-package-bases'
+            }
+            post {
+                success {
+                    echo 'mypy static analysis finished.'
+                }
+                failure {
+                    echo 'mypy static analysis failed.'
+                }
+            }
+        }
+    }
+    post{
+        always{
+            echo "========Pipeline finished.========"
+        }
+        success{
+            echo "========pipeline executed successfully========"
+        }
+        failure{
+            echo "========pipeline execution failed!========"
+        }
+    }
+}
