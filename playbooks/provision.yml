@@ -28,11 +28,6 @@
         line: 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64'
         create: yes
 
-    - name: Source environment
-      shell: source /etc/environment
-      args:
-        executable: /bin/bash
-
     - name: Add Jenkins key
       get_url:
         url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
@@ -89,8 +84,26 @@
         group: jenkins
         recurse: yes
 
-    - name: Start Jenkins service
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker service is running
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add Jenkins user to docker group
+      user:
+        name: jenkins
+        groups: docker
+        append: yes
+
+    - name: Restart Jenkins service
       systemd:
         name: jenkins
-        state: started
+        state: restarted
         enabled: yes
