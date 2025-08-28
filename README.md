@@ -12,6 +12,8 @@ The project was developed on **Ubuntu 24.04**, the provided script `setup.sh` wo
 - docker
 - kubectl
 - minikube
+- vagrant
+- virtualbox (for vagrant)
 
 ## Environment Configuration
 
@@ -60,6 +62,41 @@ Once the required tools are installed and environment is configured properly you
 3. **Get URL**: `minikube service nginx-service --url -n dev`
 4. **Access** the application in your browser
 
+### Quick Commands For running application.
+
+- `./kube_check.sh deploy` - Deploy all resources
+- `./kube_check.sh status` - Show deployment status  
+- `./kube_check.sh cleanup` - Remove all resources
+- `./kube_check.sh help` - Show help
+
+
+### Jenkins Server Setup
+
+In this project I use both Github actions and Jenkins server, to compare and learn both.
+
+Use the vagrant command to start the local vagrant box with Jenkins server.
+```bash
+vagrant up
+```
+Once Vagrant box is up you can access the Jenkins server on: `192.168.56.10:8080`<br>
+If you want to stop the vagrant machine use the:
+
+```bash
+vagrant halt
+```
+
+If you experience any issues with the VM you can access it with `vagrant ssh` command.
+First time starting the server you will need a password that is stored on the machine, to retrieve it use the:
+```bash
+vagrant ssh
+sudo cat /var/jenkins_home/secrets/initialAdminPassword
+```
+Copy the password and paste it in the browser when prompted for it.
+
+Install the required plugins for Jenkins to function properly with the current setup:
+- Docker
+- Docker Pipeline
+
 ### Cleanup
 
 Once you are finished with the application run following commands to stop all related processes.
@@ -67,14 +104,13 @@ Once you are finished with the application run following commands to stop all re
 ```bash
 ./kube_check.sh cleanup
 minikube stop
+vagrant halt
+
 ```
-
-### Quick Commands For running application.
-
-- `./kube_check.sh deploy` - Deploy all resources
-- `./kube_check.sh status` - Show deployment status  
-- `./kube_check.sh cleanup` - Remove all resources
-- `./kube_check.sh help` - Show help
+If you want to remove all Jenkins related data and remove vagrant box run following:
+```bash
+vagrant destroy
+```
 
 ### Architecture
 
@@ -98,9 +134,10 @@ This project implements a complete DevOps infrastructure with observability stac
 - **Namespace**: All services isolated in `dev` namespace
 - **Storage**: Persistent volumes for databases and monitoring data
 - **Configuration**: Kubernetes ConfigMaps and Secrets for service configuration
-- **CI/CD**: GitHub Actions with security scanning, linting, and automated testing
+- **CI/CD**: GitHub Actions and Jenkins with security scanning, linting, and automated testing
 
 #### Access Points
 - **Application**: `minikube service nginx-service --url -n dev`
 - **Grafana**: `minikube service grafana-service --url -n dev`
 - **API Endpoints**: Available through nginx proxy at `/api/`
+- **Jenkins**: Available in with the browser at: `192.168.56.10:8080`
