@@ -1,0 +1,5 @@
+jenkins_plugins:
+  - git
+  - workflow-aggregator
+  - credenctials-binding
+  - docker

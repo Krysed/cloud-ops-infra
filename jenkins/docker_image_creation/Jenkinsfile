@@ -1,0 +1,35 @@
+pipeline{
+    agent{
+        label "node"
+    }
+    stages{
+        stage("Build Image"){
+            steps{
+                echo "========Building Images========"
+            }
+            post{
+                always{
+                    echo "========always========"
+                }
+                success{
+                    echo "========A executed successfully========"
+                }
+                failure{
+                    echo "========A execution failed========"
+                }
+            }
+        }
+    }
+    post{
+        always{
+            echo "========Pipeline finished========"
+
+        }
+        success{
+            echo "========Docker Images Created Successfully========"
+        }
+        failure{
+            echo "========Docker Images Creation Failed========"
+        }
+    }
+}

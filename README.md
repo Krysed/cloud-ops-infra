@@ -70,7 +70,7 @@ Once the required tools are installed and environment is configured properly you
 - `./kube_check.sh help` - Show help
 
 
-### Jenkins Server Setup
+## Jenkins Server Setup
 
 In this project I use both Github actions and Jenkins server, to compare and learn both.
 
@@ -97,7 +97,7 @@ Install the required plugins for Jenkins to function properly with the current s
 - Docker
 - Docker Pipeline
 
-### Cleanup
+## Cleanup
 
 Once you are finished with the application run following commands to stop all related processes.
 
@@ -112,7 +112,7 @@ If you want to remove all Jenkins related data and remove vagrant box run follow
 vagrant destroy
 ```
 
-### Architecture
+## Architecture
 
 This project implements a complete DevOps infrastructure with observability stack running on Kubernetes.
 
@@ -130,14 +130,22 @@ This project implements a complete DevOps infrastructure with observability stac
 - **Tempo**: Distributed tracing for request flow analysis
 - **Mimir**: Metrics storage for historical analysis
 
-#### Infrastructure
+### Infrastructure
 - **Namespace**: All services isolated in `dev` namespace
 - **Storage**: Persistent volumes for databases and monitoring data
 - **Configuration**: Kubernetes ConfigMaps and Secrets for service configuration
 - **CI/CD**: GitHub Actions and Jenkins with security scanning, linting, and automated testing
 
-#### Access Points
+### Access Points
 - **Application**: `minikube service nginx-service --url -n dev`
 - **Grafana**: `minikube service grafana-service --url -n dev`
 - **API Endpoints**: Available through nginx proxy at `/api/`
 - **Jenkins**: Available in with the browser at: `192.168.56.10:8080`
+
+## Jenkins Pipelines
+- **Docker image Creation** - Building the custom docker images and uploads them to appropriate storage.
+- **Python Check** - Performs the appropriate static analysis of the python code.
+- **Secrets Check** - Performs a Repository scan and looks for the secrets if they ware uploaded to the repository.
+
+## Github Actions pipelines
+- **Complete Workflow** - Complete pipeline 

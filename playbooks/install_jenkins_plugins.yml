@@ -1,0 +1,48 @@
+---
+- name: Install Jenkins plugins
+  hosts: jenkins
+  become: true
+
+  vars_files:
+    - vars/plugins.yml
+
+  vars:
+    jenkins_url: "http://localhost:8080"
+    jenkins_admin_user: $JENKINS_ADMIN_USER
+    jenkins_admin_password: $JENKINS_ADMIN_PASSWORD
+
+  tasks:
+    - name: Ensure required packages are installed
+      apt:
+        name: [curl, unzip, openjdk-11-jre-headless]
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Wait for Jenkins to be up
+      uri:
+        url: "{{ jenkins_url }}/login"
+        status_code: 200
+        timeout: 30
+      register: result
+      retries: 10
+      delay: 10
+      until: result.status == 200
+
+    - name: Install required Jenkins plugins
+      community.general.jenkins_plugin:
+        name: "{{ item }}"
+        url: "{{ jenkins_url }}"
+        user: "{{ jenkins_admin_user }}"
+        password: "{{ jenkins_admin_password }}"
+        state: present
+        validate_certs: no
+      loop: "{{ jenkins_plugins }}"
+
+    - name: Restart Jenkins after plugin installation
+      community.general.jenkins_script:
+        script: |
+          Jenkins.instance.safeRestart()
+        url: "{{ jenkins_url }}"
+        user: "{{ jenkins_admin_user }}"
+        password: "{{ jenkins_admin_password }}"
+        validate_certs: no
