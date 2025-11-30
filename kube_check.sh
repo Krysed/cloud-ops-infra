@@ -108,6 +108,7 @@ deploy_resources() {
     kubectl apply -f "${K8S_DIR}/grafana/grafana-secret.yaml"
     kubectl apply -f "${K8S_DIR}/grafana/grafana-configmap.yaml"
     kubectl apply -f "${K8S_DIR}/loki/loki-configmap.yaml"
+    kubectl apply -f "${K8S_DIR}/promtail/promtail-configmap.yaml"
     kubectl apply -f "${K8S_DIR}/mimir/mimir-configmap.yaml"
     kubectl apply -f "${K8S_DIR}/tempo/tempo-configmap.yaml"
     kubectl apply -f "${K8S_DIR}/prometheus/prometheus-configmap.yaml"
@@ -157,8 +158,11 @@ deploy_resources() {
     echo -e "${YELLOW}   - Loki Deployment...${NC}"
     kubectl apply -f "${K8S_DIR}/loki/loki-deployment.yaml"
     wait_for_resource "deployment" "loki-deployment"
-    
-        
+
+    echo -e "${YELLOW}   - Promtail DaemonSet...${NC}"
+    kubectl apply -f "${K8S_DIR}/promtail/promtail-daemonset.yaml"
+    kubectl rollout status daemonset/promtail -n dev --timeout=300s
+
     echo -e "${YELLOW}   - Mimir Deployment...${NC}"
     kubectl apply -f "${K8S_DIR}/mimir/mimir-deployment.yaml"
     wait_for_resource "deployment" "mimir-deployment"
@@ -215,6 +219,8 @@ cleanup() {
     echo -e "${RED}Cleaning up all resources...${NC}"
     kubectl delete namespace dev --ignore-not-found=true
     kubectl delete pv postgres-pv redis-pv grafana-pv loki-pv mimir-pv tempo-pv --ignore-not-found=true
+    kubectl delete clusterrole promtail --ignore-not-found=true
+    kubectl delete clusterrolebinding promtail --ignore-not-found=true
     echo -e "${GREEN}Cleanup completed${NC}"
 }
 

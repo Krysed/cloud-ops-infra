@@ -13,4 +13,3 @@ opentelemetry-instrumentation-redis
 opentelemetry-exporter-otlp
 opentelemetry-exporter-prometheus
 prometheus-client
-python-logging-loki

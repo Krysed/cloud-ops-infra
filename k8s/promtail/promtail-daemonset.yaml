@@ -1,0 +1,172 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: promtail
+  namespace: dev
+  labels:
+    app: myapp
+    component: promtail
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: promtail
+  labels:
+    app: myapp
+    component: promtail
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/proxy
+      - services
+      - endpoints
+      - pods
+    verbs: ["get", "watch", "list"]
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: promtail
+  labels:
+    app: myapp
+    component: promtail
+subjects:
+  - kind: ServiceAccount
+    name: promtail
+    namespace: dev
+roleRef:
+  kind: ClusterRole
+  name: promtail
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: promtail
+  namespace: dev
+  labels:
+    app: myapp
+    component: promtail
+spec:
+  selector:
+    matchLabels:
+      app: promtail
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: promtail
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9080"
+    spec:
+      serviceAccountName: promtail
+      containers:
+        - name: promtail
+          image: grafana/promtail:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - -config.file=/etc/promtail/promtail.yaml
+          ports:
+            - containerPort: 9080
+              name: http-metrics
+              protocol: TCP
+          env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            # Mount the config
+            - name: config
+              mountPath: /etc/promtail
+
+            # Mount the pod logs
+            - name: pods
+              mountPath: /var/log/pods
+              readOnly: true
+
+            # Mount docker container logs (for older K8s versions)
+            - name: docker
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+
+            # Positions file
+            - name: positions
+              mountPath: /tmp
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: false
+            runAsUser: 0  # Needs root to read pod logs
+
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 5
+
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 5
+
+      volumes:
+        # ConfigMap volume
+        - name: config
+          configMap:
+            name: promtail-config
+
+        # Host path for pod logs
+        - name: pods
+          hostPath:
+            path: /var/log/pods
+            type: Directory
+
+        # Host path for docker container logs
+        - name: docker
+          hostPath:
+            path: /var/lib/docker/containers
+            type: DirectoryOrCreate
+
+        # EmptyDir for positions file
+        - name: positions
+          emptyDir: {}
+
+      tolerations:
+        # Run on all nodes, including master
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
