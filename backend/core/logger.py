@@ -1,26 +1,18 @@
 import logging
-import os
 
-from logging_loki import LokiHandler
-
-# Create console handler
+# Create console handler with structured logging format
 console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-
-# Loki handler for centralized logging
-loki_url = os.getenv('LOKI_URL', 'http://loki:3100/loki/api/v1/push')
-loki_handler = LokiHandler(
-    url=loki_url,
-    tags={"job": "fastapi-backend", "service": "backend"},
-    version="1",
+console_handler.setFormatter(
+    logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
 )
 
+# Configure logging to stdout (Promtail will collect these logs)
 logging.basicConfig(
     level=logging.INFO,
-    handlers=[
-        console_handler,
-        loki_handler
-    ]
+    handlers=[console_handler]
 )
 
 logger = logging.getLogger("fastapi-backend")

@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promtail-config
+  namespace: dev
+  labels:
+    app: myapp
+    component: promtail
+data:
+  promtail.yaml: |
+    server:
+      http_listen_port: 9080
+      grpc_listen_port: 0
+      log_level: info
+
+    positions:
+      filename: /tmp/positions.yaml
+
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+        tenant_id: default
+
+    scrape_configs:
+      # Scrape logs from Kubernetes pods
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+
+        pipeline_stages:
+          # Extract metadata from Kubernetes labels
+          - docker: {}
+
+          # Parse log level from logs (if present)
+          - regex:
+              expression: '.*level=(?P<level>\w+).*'
+          - labels:
+              level:
+
+        relabel_configs:
+          # Only scrape pods in 'dev' namespace
+          - source_labels: [__meta_kubernetes_namespace]
+            action: keep
+            regex: dev
+
+          # Add namespace label
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+
+          # Add pod name label
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+
+          # Add container name label
+          - source_labels: [__meta_kubernetes_pod_container_name]
+            target_label: container
+
+          # Add app label from pod labels
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            target_label: app
+
+          # Add component label from pod labels
+          - source_labels: [__meta_kubernetes_pod_label_component]
+            target_label: component
+
+          # Set the path to scrape logs from
+          - source_labels: [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
+            target_label: __path__
+            separator: /
+            replacement: /var/log/pods/*$1/*.log
+
+          # Add node name
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node
