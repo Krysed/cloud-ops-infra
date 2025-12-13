@@ -189,11 +189,29 @@ async def get_posting_for_edit(posting_id: int, request: Request):
         }
     })
 
-@api_router.delete("/postings")
-async def delete_posting(posting_id: int = Form(...)):
+@api_router.delete("/postings/{posting_id}")
+async def delete_posting(posting_id: int, request: Request):
+    """Delete a posting (owner only)"""
+    session_token = request.cookies.get("session_token")
+    session_data = get_session_user(session_token)
+
+    if not session_data:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    user_id = session_data["user_id"]
+
+    # Verify user owns this posting
+    posting = get_posting_by_id(posting_id)
+    if not posting:
+        raise HTTPException(status_code=404, detail="Posting not found")
+
+    if posting["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Access denied - you can only delete your own postings")
+
     success = delete_posting_from_db(posting_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Posting not found")
+        raise HTTPException(status_code=500, detail="Failed to delete posting")
+
     return JSONResponse(content={"message": "Posting deleted successfully"})
 
 @api_router.get("/postings")
