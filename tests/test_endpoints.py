@@ -1258,35 +1258,108 @@ class TestPostingManagementEndpoints:
         assert "error=access_denied" in result.headers["location"]
     
     @patch('backend.api.endpoints.delete_posting_from_db')
-    def test_delete_posting_success(self, mock_delete_posting):
+    @patch('backend.api.endpoints.get_posting_by_id')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_delete_posting_success(self, mock_get_session, mock_get_posting, mock_delete_posting):
         """Test successful posting deletion"""
         import asyncio
 
         from backend.api.endpoints import delete_posting
-        
+
+        # Mock authenticated user
+        mock_get_session.return_value = {"user_id": 1, "email": "test@example.com"}
+
+        # Mock posting owned by the user
+        mock_get_posting.return_value = {"id": 1, "user_id": 1, "title": "Test Posting"}
+
+        # Mock successful deletion
         mock_delete_posting.return_value = True
-        
-        result = asyncio.run(delete_posting(posting_id=1))
-        
+
+        # Mock request with session cookie
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "valid_session"
+
+        result = asyncio.run(delete_posting(posting_id=1, request=mock_request))
+
         assert result.status_code == 200
-    
-    @patch('backend.api.endpoints.delete_posting_from_db')
-    def test_delete_posting_not_found(self, mock_delete_posting):
+        assert json.loads(result.body) == {"message": "Posting deleted successfully"}
+
+    @patch('backend.api.endpoints.get_posting_by_id')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_delete_posting_not_found(self, mock_get_session, mock_get_posting):
         """Test posting deletion when posting not found"""
         import asyncio
 
         from fastapi import HTTPException
 
         from backend.api.endpoints import delete_posting
-        
-        mock_delete_posting.return_value = False
-        
+
+        # Mock authenticated user
+        mock_get_session.return_value = {"user_id": 1, "email": "test@example.com"}
+
+        # Mock posting not found
+        mock_get_posting.return_value = None
+
+        # Mock request with session cookie
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "valid_session"
+
         try:
-            asyncio.run(delete_posting(posting_id=999))
+            asyncio.run(delete_posting(posting_id=999, request=mock_request))
             raise AssertionError("Should have raised HTTPException")
         except HTTPException as e:
             assert e.status_code == 404
             assert e.detail == "Posting not found"
+
+    @patch('backend.api.endpoints.get_posting_by_id')
+    @patch('backend.api.endpoints.get_session_user')
+    def test_delete_posting_access_denied(self, mock_get_session, mock_get_posting):
+        """Test posting deletion when user doesn't own the posting"""
+        import asyncio
+
+        from fastapi import HTTPException
+
+        from backend.api.endpoints import delete_posting
+
+        # Mock authenticated user (user_id = 1)
+        mock_get_session.return_value = {"user_id": 1, "email": "test@example.com"}
+
+        # Mock posting owned by different user (user_id = 2)
+        mock_get_posting.return_value = {"id": 1, "user_id": 2, "title": "Other User's Posting"}
+
+        # Mock request with session cookie
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = "valid_session"
+
+        try:
+            asyncio.run(delete_posting(posting_id=1, request=mock_request))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 403
+            assert "Access denied" in e.detail
+
+    @patch('backend.api.endpoints.get_session_user')
+    def test_delete_posting_unauthenticated(self, mock_get_session):
+        """Test posting deletion when user is not authenticated"""
+        import asyncio
+
+        from fastapi import HTTPException
+
+        from backend.api.endpoints import delete_posting
+
+        # Mock no session (not authenticated)
+        mock_get_session.return_value = None
+
+        # Mock request without session cookie
+        mock_request = MagicMock()
+        mock_request.cookies.get.return_value = None
+
+        try:
+            asyncio.run(delete_posting(posting_id=1, request=mock_request))
+            raise AssertionError("Should have raised HTTPException")
+        except HTTPException as e:
+            assert e.status_code == 401
+            assert e.detail == "Authentication required"
     
     @patch('backend.api.endpoints.get_all_postings')
     def test_api_get_all_postings(self, mock_get_all):
