@@ -37,7 +37,7 @@ variable "environment" {
 resource "google_storage_bucket" "terraform_state" {
   name          = "infra-terraform-state-${var.environment}"
   location      = var.region
-  force_destroy = false
+  force_destroy = true # false will prevent destroying the bucket when it contains any files
 
   versioning {
     enabled = true
