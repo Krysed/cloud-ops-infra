@@ -1,4 +1,5 @@
 .venv/
+.vscode/
 .vagrant/
 .ruff_cache/
 .mypy_cache/
