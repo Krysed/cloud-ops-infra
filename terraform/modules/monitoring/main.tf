@@ -48,7 +48,7 @@ resource "helm_release" "kube_prometheus_stack" {
           {
             name   = "Tempo"
             type   = "tempo"
-            url    = "http://tempo.${var.namespace}.svc.cluster.local:3100"
+            url    = "http://tempo.${var.namespace}.svc.cluster.local:3200"
             access = "proxy"
           },
           {
