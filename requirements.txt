@@ -16,6 +16,7 @@ uvicorn
 ruff
 pytest
 pytest-cov
+httpx
 bandit
 mypy
 types-psycopg2
