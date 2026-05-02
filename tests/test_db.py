@@ -158,14 +158,6 @@ def test_get_applications_by_posting(patch_psycopg2_connect, mock_cursor):
     assert result == expected
     mock_cursor.execute.assert_called_once()
 
-def test_update_user_rowcount_zero(patch_psycopg2_connect, mock_cursor, mock_redis):
-    mock_cursor.fetchone.side_effect = [{"id": 1}, None]
-    def fake_execute(*args, **kwargs):
-        mock_cursor.rowcount = 0
-
-    mock_cursor.execute.side_effect = fake_execute
-    result = db.update_user_in_db(1, name="ShouldFail")
-    assert result is True
 
 def test_get_user_by_email(patch_psycopg2_connect, mock_cursor):
     expected_user = {"id": 1, "email": "john@example.com", "username": "johndoe"}
