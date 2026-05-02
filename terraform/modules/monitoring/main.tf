@@ -37,6 +37,14 @@ resource "helm_release" "kube_prometheus_stack" {
         service = {
           type = "LoadBalancer"
         }
+        sidecar = {
+          dashboards = {
+            enabled         = true
+            label           = "grafana_dashboard"
+            labelValue      = "1"
+            searchNamespace = "ALL"
+          }
+        }
         # Pre-provision all datasources automatically
         additionalDataSources = [
           {
@@ -340,6 +348,32 @@ resource "kubernetes_config_map" "mimir_config" {
         grpc_listen_port: 9095
     EOT
   }
+}
+
+# ============================================================
+# Grafana dashboard ConfigMaps
+# Sidecar watches for ConfigMaps with label grafana_dashboard=1
+# and loads them automatically without restarting Grafana.
+# Source of truth: grafana/dashboards/ (shared with Minikube provisioning)
+# ============================================================
+locals {
+  dashboards_path = "${path.module}/../../../grafana/dashboards"
+}
+
+resource "kubernetes_config_map" "dashboard_backend_health" {
+  metadata {
+    name      = "dashboard-backend-health"
+    namespace = kubernetes_namespace.monitoring.metadata[0].name
+    labels = {
+      grafana_dashboard = "1"
+    }
+  }
+
+  data = {
+    "backend_health.json" = file("${local.dashboards_path}/backend_health.json")
+  }
+
+  depends_on = [helm_release.kube_prometheus_stack]
 }
 
 resource "kubernetes_service" "mimir" {

@@ -2,27 +2,19 @@
   "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
-    "name": "backend-health",
+    "name": "ad7mzcm",
     "namespace": "default",
-    "uid": "9bcb00ff-0aa0-481c-a4d4-41a053dd8594",
-    "resourceVersion": "1777217314149986",
-    "generation": 5,
-    "creationTimestamp": "2026-04-26T13:35:59Z",
+    "uid": "d5277789-2e80-4ba6-b6d9-dbc66b7f778a",
+    "resourceVersion": "1777304307643005",
+    "generation": 1,
+    "creationTimestamp": "2026-04-27T15:38:27Z",
     "labels": {
-      "grafana.app/deprecatedInternalID": "3761436421586944"
+      "grafana.app/deprecatedInternalID": "3829562718892032"
     },
     "annotations": {
-      "grafana.app/createdBy": "access-policy:service",
+      "grafana.app/createdBy": "user:afk9bmnczaccge",
       "grafana.app/folder": "",
-      "grafana.app/managedBy": "classic-file-provisioning",
-      "grafana.app/managerAllowsEdits": "true",
-      "grafana.app/managerId": "default",
-      "grafana.app/saved-from-ui": "Grafana v13.0.1 (a100054f)",
-      "grafana.app/sourceChecksum": "a2b3dea2f06c9ad2c7f40478e83a8fbe",
-      "grafana.app/sourcePath": "/etc/dashboards/backend_health.json",
-      "grafana.app/sourceTimestamp": "1755693049000",
-      "grafana.app/updatedBy": "user:afk9bmnczaccge",
-      "grafana.app/updatedTimestamp": "2026-04-26T15:28:34Z"
+      "grafana.app/saved-from-ui": "Grafana v13.0.1 (a100054f)"
     }
   },
   "spec": {
@@ -48,14 +40,15 @@
       }
     ],
     "cursorSync": "Off",
+    "description": "Dashboard with business related metrics",
     "editable": true,
     "elements": {
-      "panel-10": {
+      "panel-1": {
         "kind": "Panel",
         "spec": {
-          "id": 10,
-          "title": "Error Logs Rate",
-          "description": "",
+          "id": 1,
+          "title": "Users registered last hour",
+          "description": "Shows users that ware registered during last hour",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -66,42 +59,19 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
-                      "group": "loki",
+                      "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "loki"
+                        "name": "mimir"
                       },
                       "spec": {
-                        "direction": "backward",
                         "editorMode": "code",
-                        "expr": "sum(rate({app=\"backend\", namespace=\"dev\"} |= \"ERROR\" [5m]))",
-                        "legendFormat": "Error logs",
-                        "queryType": "range"
+                        "expr": "rate(http_requests_total{endpoint=\"/api/users\", method=\"POST\", status=\"201\"}[5m])",
+                        "legendFormat": "__auto",
+                        "range": true
                       }
                     },
                     "refId": "A",
-                    "hidden": false
-                  }
-                },
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "loki",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "loki"
-                      },
-                      "spec": {
-                        "direction": "backward",
-                        "editorMode": "code",
-                        "expr": "sum(rate({app=\"backend\", namespace=\"dev\"} |= \"auth_required\" [5m]))\n",
-                        "legendFormat": "Auth Failures",
-                        "queryType": "range"
-                      }
-                    },
-                    "refId": "B",
                     "hidden": false
                   }
                 }
@@ -134,16 +104,13 @@
               },
               "fieldConfig": {
                 "defaults": {
+                  "unit": "reqps",
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
                         "value": 0,
                         "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
                       }
                     ]
                   },
@@ -191,101 +158,12 @@
           }
         }
       },
-      "panel-11": {
-        "kind": "Panel",
-        "spec": {
-          "id": 11,
-          "title": "Availability",
-          "description": "",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "mimir"
-                      },
-                      "spec": {
-                        "editorMode": "code",
-                        "expr": "avg_over_time(up{job=\"fastapi-backend\"}[1h]) * 100",
-                        "interval": "",
-                        "legendFormat": "Error rate",
-                        "range": true
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "stat",
-            "version": "13.0.1",
-            "spec": {
-              "options": {
-                "colorMode": "value",
-                "graphMode": "area",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "thresholds": {
-                    "mode": "percentage",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 95,
-                        "color": "red"
-                      },
-                      {
-                        "value": 99,
-                        "color": "#EAB839"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
       "panel-2": {
         "kind": "Panel",
         "spec": {
           "id": 2,
-          "title": "Error Rate %",
-          "description": "",
+          "title": "User Registration - Success vs Error",
+          "description": "Shows Success vs Error rate for new user registration process",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -303,98 +181,8 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "(sum(rate(http_requests_total{status=~\"4..|5..\"}[5m])) / sum(rate(http_requests_total[5m]))) * 100",
-                        "interval": "",
-                        "legendFormat": "Error rate",
-                        "range": true
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "stat",
-            "version": "13.0.1",
-            "spec": {
-              "options": {
-                "colorMode": "value",
-                "graphMode": "area",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 0.5,
-                        "color": "#EAB839"
-                      },
-                      {
-                        "value": 5,
-                        "color": "red"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "thresholds"
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-3": {
-        "kind": "Panel",
-        "spec": {
-          "id": 3,
-          "title": "Response Time Percentiles",
-          "description": "",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "mimir"
-                      },
-                      "spec": {
-                        "editorMode": "code",
-                        "expr": "histogram_quantile(0.95, sum by (endpoint, le) (rate(http_request_duration_seconds_bucket[5m])))",
-                        "instant": false,
-                        "legendFormat": "P95 {{endpoint}}",
+                        "expr": "rate(http_requests_total{endpoint=\"/api/users\", method=\"POST\", status=\"201\"}[5m])",
+                        "legendFormat": "__auto",
                         "range": true
                       }
                     },
@@ -414,9 +202,9 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "histogram_quantile(0.99, sum by (endpoint, le) (rate(http_request_duration_seconds_bucket[5m])))",
+                        "expr": "rate(http_requests_total{endpoint=\"/api/users\", method=\"POST\", status=\"409\"}[5m])",
                         "instant": false,
-                        "legendFormat": "P99 {{endpoint}}",
+                        "legendFormat": "__auto",
                         "range": true
                       }
                     },
@@ -436,9 +224,9 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m])",
+                        "expr": "rate(http_requests_total{endpoint=\"/api/users\", method=\"POST\", status=~\"5..\"}[5m])",
                         "instant": false,
-                        "legendFormat": "Average",
+                        "legendFormat": "__auto",
                         "range": true
                       }
                     },
@@ -475,7 +263,7 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "s",
+                  "unit": "reqps",
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -489,7 +277,7 @@
                     "mode": "palette-classic"
                   },
                   "custom": {
-                    "axisBorderShow": true,
+                    "axisBorderShow": false,
                     "axisCenteredZero": false,
                     "axisColorMode": "text",
                     "axisLabel": "",
@@ -497,7 +285,7 @@
                     "barAlignment": 0,
                     "barWidthFactor": 0.6,
                     "drawStyle": "line",
-                    "fillOpacity": 10,
+                    "fillOpacity": 0,
                     "gradientMode": "none",
                     "hideFrom": {
                       "legend": false,
@@ -506,7 +294,7 @@
                     },
                     "insertNulls": false,
                     "lineInterpolation": "linear",
-                    "lineWidth": 2,
+                    "lineWidth": 1,
                     "pointSize": 5,
                     "scaleDistribution": {
                       "type": "linear"
@@ -523,26 +311,18 @@
                     }
                   }
                 },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Trace ID"
-                    },
-                    "properties": []
-                  }
-                ]
+                "overrides": []
               }
             }
           }
         }
       },
-      "panel-4": {
+      "panel-3": {
         "kind": "Panel",
         "spec": {
-          "id": 4,
-          "title": "Request rate by Endpoint",
-          "description": "Request rate by endpoint cropped to last 5 minutes.",
+          "id": 3,
+          "title": "Login statistics - Success vs Fail",
+          "description": "Statistics for user login endpoint",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -560,13 +340,34 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "sum by (endpoint, method) (rate(http_requests_total[5m]))",
-                        "instant": false,
+                        "expr": "rate(http_requests_total{endpoint=\"/api/login\", method=\"POST\", status=\"200\"}[5m])",
                         "legendFormat": "__auto",
                         "range": true
                       }
                     },
                     "refId": "A",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "mimir"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "rate(http_requests_total{endpoint=\"/api/login\", method=\"POST\", status=~\"4..\"}[5m])",
+                        "instant": false,
+                        "legendFormat": "__auto",
+                        "range": true
+                      }
+                    },
+                    "refId": "B",
                     "hidden": false
                   }
                 }
@@ -599,17 +400,12 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "reqps",
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
                         "value": 0,
                         "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
                       }
                     ]
                   },
@@ -625,7 +421,7 @@
                     "barAlignment": 0,
                     "barWidthFactor": 0.6,
                     "drawStyle": "line",
-                    "fillOpacity": 10,
+                    "fillOpacity": 0,
                     "gradientMode": "none",
                     "hideFrom": {
                       "legend": false,
@@ -634,7 +430,7 @@
                     },
                     "insertNulls": false,
                     "lineInterpolation": "linear",
-                    "lineWidth": 2,
+                    "lineWidth": 1,
                     "pointSize": 5,
                     "scaleDistribution": {
                       "type": "linear"
@@ -657,93 +453,12 @@
           }
         }
       },
-      "panel-5": {
+      "panel-4": {
         "kind": "Panel",
         "spec": {
-          "id": 5,
-          "title": "Recent Error logs",
-          "description": "Shows recent error logs.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "loki",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "loki"
-                      },
-                      "spec": {
-                        "direction": "backward",
-                        "editorMode": "code",
-                        "expr": "{app=\"backend\", namespace=\"dev\"} |= \"ERROR\"",
-                        "queryType": "range"
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "logs",
-            "version": "13.0.1",
-            "spec": {
-              "options": {
-                "dedupStrategy": "none",
-                "enableInfiniteScrolling": false,
-                "enableLogDetails": true,
-                "prettifyLogMessage": false,
-                "showCommonLabels": false,
-                "showControls": false,
-                "showFieldSelector": false,
-                "showLabels": false,
-                "showLevel": true,
-                "showTime": false,
-                "sortOrder": "Descending",
-                "timestampResolution": "ms",
-                "unwrappedColumns": false,
-                "wrapLogMessage": false
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Name"
-                    },
-                    "properties": []
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Service"
-                    },
-                    "properties": []
-                  }
-                ]
-              }
-            }
-          }
-        }
-      },
-      "panel-7": {
-        "kind": "Panel",
-        "spec": {
-          "id": 7,
-          "title": "Total request/sec",
-          "description": "Shows total requests per second",
+          "id": 4,
+          "title": "New Postings in last hour",
+          "description": "Shows new postings in last hour",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -761,8 +476,8 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "sum(rate(http_requests_total[5m]))",
-                        "legendFormat": "Total RPS",
+                        "expr": "increase(http_requests_total{endpoint=\"/api/postings\", method=\"POST\", status=\"201\"}[1h])",
+                        "legendFormat": "__auto",
                         "range": true
                       }
                     },
@@ -799,7 +514,7 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "reqps",
+                  "unit": "short",
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -823,12 +538,12 @@
           }
         }
       },
-      "panel-8": {
+      "panel-5": {
         "kind": "Panel",
         "spec": {
-          "id": 8,
-          "title": "Average response time",
-          "description": "Shows average response time from endpoints.",
+          "id": 5,
+          "title": "Number of applications",
+          "description": "Shows number of application for job offers in last 5min",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -846,7 +561,7 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "(rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m])) * 1000",
+                        "expr": "rate(http_requests_total{endpoint=\"/api/applications\", method=\"POST\", status=\"201\"}[5m])",
                         "legendFormat": "__auto",
                         "range": true
                       }
@@ -884,7 +599,6 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "ms",
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -942,12 +656,12 @@
           }
         }
       },
-      "panel-9": {
+      "panel-6": {
         "kind": "Panel",
         "spec": {
-          "id": 9,
-          "title": "Errors traces",
-          "description": "",
+          "id": 6,
+          "title": "Unauthorized access attempts",
+          "description": "Shows number of unauthorized access attempts",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -958,18 +672,127 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
-                      "group": "tempo",
+                      "group": "",
+                      "version": "v0",
+                      "spec": {}
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "reqps",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 0.1,
+                        "color": "yellow"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "id": 7,
+          "title": "Unauthorized access per endpoint",
+          "description": "Table with unauthorized access attempts per endpoint",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "tempo"
+                        "name": "mimir"
                       },
                       "spec": {
-                        "limit": 20,
-                        "metricsQueryType": "range",
-                        "query": "{resource.service.name=\"fastapi-backend\" && status = error}",
-                        "queryType": "traceql",
-                        "serviceMapUseNativeHistograms": false,
-                        "tableType": "traces"
+                        "editorMode": "code",
+                        "expr": "sort_desc(sum by (endpoint, method) (\n    increase(http_requests_total{status=~\"401|403\"}[1h])\n  ))",
+                        "legendFormat": "__auto",
+                        "range": true
                       }
                     },
                     "refId": "A",
@@ -1039,7 +862,7 @@
               "height": 8,
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-7"
+                "name": "panel-1"
               }
             }
           },
@@ -1052,7 +875,7 @@
               "height": 8,
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-11"
+                "name": "panel-2"
               }
             }
           },
@@ -1065,30 +888,17 @@
               "height": 8,
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-2"
+                "name": "panel-3"
               }
             }
           },
           {
             "kind": "GridLayoutItem",
             "spec": {
-              "x": 0,
-              "y": 16,
-              "width": 24,
+              "x": 12,
+              "y": 8,
+              "width": 12,
               "height": 8,
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-8"
-              }
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "x": 0,
-              "y": 24,
-              "width": 24,
-              "height": 9,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-4"
@@ -1099,25 +909,12 @@
             "kind": "GridLayoutItem",
             "spec": {
               "x": 0,
-              "y": 33,
-              "width": 24,
-              "height": 8,
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-3"
-              }
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "x": 0,
-              "y": 41,
+              "y": 16,
               "width": 12,
               "height": 8,
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-10"
+                "name": "panel-5"
               }
             }
           },
@@ -1125,12 +922,12 @@
             "kind": "GridLayoutItem",
             "spec": {
               "x": 12,
-              "y": 41,
+              "y": 16,
               "width": 12,
               "height": 8,
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-9"
+                "name": "panel-6"
               }
             }
           },
@@ -1138,12 +935,12 @@
             "kind": "GridLayoutItem",
             "spec": {
               "x": 0,
-              "y": 49,
-              "width": 24,
-              "height": 10,
+              "y": 24,
+              "width": 12,
+              "height": 8,
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-5"
+                "name": "panel-7"
               }
             }
           }
@@ -1151,7 +948,7 @@
       }
     },
     "links": [],
-    "liveNow": true,
+    "liveNow": false,
     "preload": false,
     "tags": [],
     "timeSettings": {
@@ -1174,7 +971,15 @@
       "hideTimepicker": false,
       "fiscalYearStartMonth": 0
     },
-    "title": "Backend health",
-    "variables": []
+    "title": "Business metrics",
+    "variables": [],
+    "preferences": {
+      "layout": {
+        "kind": "GridLayout",
+        "spec": {
+          "items": []
+        }
+      }
+    }
   }
 }
