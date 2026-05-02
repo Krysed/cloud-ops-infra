@@ -53,13 +53,9 @@ resource "google_project_iam_member" "app_sa_cloudsql_client" {
   member  = "serviceAccount:${google_service_account.app_sa.email}"
 }
 
-# Workload Identity binding: K8s ServiceAccount → GCP ServiceAccount
-# The K8s SA must be named "app-sa" in the gke_namespace
-resource "google_service_account_iam_member" "workload_identity_binding" {
-  service_account_id = google_service_account.app_sa.name
-  role               = "roles/iam.workloadIdentityUser"
-  member             = "serviceAccount:${var.project_id}.svc.id.goog[${var.gke_namespace}/app-sa]"
-}
+# NOTE: workload_identity_binding is created at the environment level
+# (environments/dev/main.tf) because it depends on the GKE cluster existing
+# first (the Identity Pool infra-project-ms.svc.id.goog is created by GKE).
 
 # ============================================================
 # CI/CD Service Account (used by GitHub Actions)

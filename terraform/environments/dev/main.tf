@@ -14,6 +14,10 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 2.16"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.9"
+    }
   }
 
   backend "gcs" {
@@ -51,6 +55,38 @@ provider "helm" {
 }
 
 # ============================================================
+# Enable required GCP APIs
+# Must run before any module that creates managed resources.
+# disable_on_destroy = false prevents accidental breakage of
+# resources that were created while the API was enabled.
+# ============================================================
+resource "google_project_service" "apis" {
+  for_each = toset([
+    "compute.googleapis.com",
+    "container.googleapis.com",
+    "servicenetworking.googleapis.com",
+    "sqladmin.googleapis.com",
+    "redis.googleapis.com",
+    "secretmanager.googleapis.com",
+    "iam.googleapis.com",
+    "iamcredentials.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "artifactregistry.googleapis.com",
+  ])
+
+  project            = var.project_id
+  service            = each.value
+  disable_on_destroy = false
+}
+
+# GCP API activation takes 30-60s to propagate after the request succeeds.
+# Without this wait, resources that depend on newly enabled APIs fail with 403.
+resource "time_sleep" "wait_for_apis" {
+  create_duration = "60s"
+  depends_on      = [google_project_service.apis]
+}
+
+# ============================================================
 # Module: Security
 # Created first - GKE node SA is needed by the compute module
 # ============================================================
@@ -64,6 +100,8 @@ module "security" {
   db_password            = var.db_password
   app_secret_key         = var.app_secret_key
   grafana_admin_password = var.grafana_admin_password
+
+  depends_on = [time_sleep.wait_for_apis]
 }
 
 # ============================================================
@@ -80,6 +118,8 @@ module "networking" {
   subnet_cidr   = "10.0.0.0/24"
   pods_cidr     = "10.1.0.0/16"
   services_cidr = "10.2.0.0/16"
+
+  depends_on = [time_sleep.wait_for_apis]
 }
 
 # ============================================================
@@ -105,7 +145,7 @@ module "data" {
   redis_tier           = "BASIC"
   redis_memory_size_gb = 1
 
-  depends_on = [module.networking]
+  depends_on = [module.networking, time_sleep.wait_for_apis]
 }
 
 # ============================================================
@@ -130,7 +170,7 @@ module "compute" {
   min_node_count     = 1
   max_node_count     = 3
 
-  depends_on = [module.networking, module.security]
+  depends_on = [module.networking, module.security, time_sleep.wait_for_apis]
 }
 
 # ============================================================
@@ -156,4 +196,22 @@ module "monitoring" {
   storage_size_mimir      = "10Gi"
 
   depends_on = [module.compute]
+}
+
+# ============================================================
+# Workload Identity binding
+# Binds the Kubernetes ServiceAccount "app-sa" (in the app
+# namespace) to the GCP ServiceAccount, allowing pods to
+# authenticate as app_sa without credentials.
+#
+# Must live here (not in the security module) because the
+# Identity Pool {project_id}.svc.id.goog is created by GKE
+# and only exists after module.compute completes.
+# ============================================================
+resource "google_service_account_iam_member" "workload_identity_binding" {
+  service_account_id = module.security.app_sa_id
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[dev/app-sa]"
+
+  depends_on = [module.compute, module.security]
 }

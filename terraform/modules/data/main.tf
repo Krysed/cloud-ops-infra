@@ -12,6 +12,10 @@ resource "google_service_networking_connection" "private_vpc_connection" {
   network                 = var.network_id
   service                 = "servicenetworking.googleapis.com"
   reserved_peering_ranges = [google_compute_global_address.private_ip_range.name]
+
+  timeouts {
+    delete = "20m"
+  }
 }
 
 # ============================================================
@@ -26,7 +30,8 @@ resource "google_sql_database_instance" "postgres" {
   depends_on = [google_service_networking_connection.private_vpc_connection]
 
   settings {
-    tier = var.db_tier
+    tier    = var.db_tier
+    edition = "ENTERPRISE"
 
     ip_configuration {
       ipv4_enabled    = false

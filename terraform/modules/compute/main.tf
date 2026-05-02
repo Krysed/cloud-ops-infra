@@ -7,6 +7,7 @@ resource "google_container_cluster" "primary" {
   # node pool managed separately
   remove_default_node_pool = true
   initial_node_count       = 1
+  deletion_protection      = false
 
   # VPC-native networking, alias IP ranges
   networking_mode = "VPC_NATIVE"
@@ -56,12 +57,11 @@ resource "google_container_cluster" "primary" {
     channel = "REGULAR"
   }
 
-  # Maintenance window scheduled for Sunday 03:00-07:00 UTC
+  # Daily 4h window at 03:00 UTC satisfies GCP's requirement of
+  # >= 48h maintenance availability per 32-day period (4h × 32d = 128h).
   maintenance_policy {
-    recurring_window {
-      start_time = "2024-01-01T03:00:00Z"
-      end_time   = "2024-01-01T07:00:00Z"
-      recurrence = "FREQ=WEEKLY;BYDAY=SU"
+    daily_maintenance_window {
+      start_time = "03:00"
     }
   }
 

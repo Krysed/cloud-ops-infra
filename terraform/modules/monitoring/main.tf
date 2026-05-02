@@ -112,7 +112,8 @@ resource "helm_release" "loki" {
   repository = "https://grafana.github.io/helm-charts"
   chart      = "loki"
   namespace  = kubernetes_namespace.monitoring.metadata[0].name
-  version    = "6.20.0"
+  version = "6.20.0"
+  timeout = 1800
 
   values = [
     yamlencode({
@@ -129,6 +130,21 @@ resource "helm_release" "loki" {
           retention_period = "${var.loki_retention_days}d"
         }
         auth_enabled = false
+
+        schemaConfig = {
+          configs = [
+            {
+              from         = "2024-01-01"
+              store        = "tsdb"
+              object_store = "filesystem"
+              schema       = "v13"
+              index = {
+                prefix = "loki_index_"
+                period = "24h"
+              }
+            }
+          ]
+        }
       }
 
       singleBinary = {
