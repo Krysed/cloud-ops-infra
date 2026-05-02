@@ -7,6 +7,7 @@ resource "google_container_cluster" "primary" {
   # node pool managed separately
   remove_default_node_pool = true
   initial_node_count       = 1
+  deletion_protection      = false
 
   # VPC-native networking, alias IP ranges
   networking_mode = "VPC_NATIVE"
