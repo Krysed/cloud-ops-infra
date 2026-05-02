@@ -6,3 +6,16 @@ lint.exclude = ["build", "dist", ".venv"]
 lint.select = ["E", "F", "B", "I", "UP", "SIM"]
 
 lint.ignore = ["E501"]
+
+[tool.coverage.run]
+omit = [
+    "backend/core/telemetry.py",
+    "backend/main.py",
+    "backend/schemas/*",
+    "backend/services/*",
+    "*/__init__.py",
+    "tests/*",
+]
+
+[tool.coverage.report]
+show_missing = true
