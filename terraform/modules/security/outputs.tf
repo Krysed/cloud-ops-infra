@@ -8,6 +8,11 @@ output "app_sa_email" {
   value       = google_service_account.app_sa.email
 }
 
+output "app_sa_id" {
+  description = "Application service account resource ID (needed for Workload Identity binding)"
+  value       = google_service_account.app_sa.name
+}
+
 output "cicd_sa_email" {
   description = "CI/CD service account email (GitHub Actions)"
   value       = google_service_account.cicd_sa.email
