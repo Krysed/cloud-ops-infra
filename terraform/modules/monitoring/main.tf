@@ -161,6 +161,11 @@ resource "helm_release" "loki" {
       read    = { replicas = 0 }
       write   = { replicas = 0 }
       minio   = { enabled = false }
+
+      # Loki 6.x enables memcached-backed caches by default; disable them
+      # for filesystem/single-binary deployments where memcached never starts.
+      chunksCache  = { enabled = false }
+      resultsCache = { enabled = false }
     })
   ]
 
