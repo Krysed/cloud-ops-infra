@@ -8,6 +8,7 @@ class RegisterForm(BaseModel):
     email: EmailStr
     password: str
 
+
 class UserOut(BaseModel):
     id: int
     name: str
