@@ -66,8 +66,8 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "rate(http_requests_total{endpoint=\"/api/users\", method=\"POST\", status=\"201\"}[5m])",
-                        "legendFormat": "__auto",
+                        "expr": "increase(user_registrations_total{result=\"success\"}[1h])",
+                        "legendFormat": "Registered",
                         "range": true
                       }
                     },
@@ -181,8 +181,8 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "rate(http_requests_total{endpoint=\"/api/users\", method=\"POST\", status=\"201\"}[5m])",
-                        "legendFormat": "__auto",
+                        "expr": "rate(user_registrations_total{result=\"success\"}[5m])",
+                        "legendFormat": "Success",
                         "range": true
                       }
                     },
@@ -202,35 +202,13 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "rate(http_requests_total{endpoint=\"/api/users\", method=\"POST\", status=\"409\"}[5m])",
+                        "expr": "rate(user_registrations_total{result=\"error\"}[5m])",
                         "instant": false,
-                        "legendFormat": "__auto",
+                        "legendFormat": "Error",
                         "range": true
                       }
                     },
                     "refId": "B",
-                    "hidden": false
-                  }
-                },
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "mimir"
-                      },
-                      "spec": {
-                        "editorMode": "code",
-                        "expr": "rate(http_requests_total{endpoint=\"/api/users\", method=\"POST\", status=~\"5..\"}[5m])",
-                        "instant": false,
-                        "legendFormat": "__auto",
-                        "range": true
-                      }
-                    },
-                    "refId": "C",
                     "hidden": false
                   }
                 }
@@ -340,8 +318,8 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "rate(http_requests_total{endpoint=\"/api/login\", method=\"POST\", status=\"200\"}[5m])",
-                        "legendFormat": "__auto",
+                        "expr": "rate(login_attempts_total{result=\"success\"}[5m])",
+                        "legendFormat": "Success",
                         "range": true
                       }
                     },
@@ -361,9 +339,9 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "rate(http_requests_total{endpoint=\"/api/login\", method=\"POST\", status=~\"4..\"}[5m])",
+                        "expr": "rate(login_attempts_total{result=\"failure\"}[5m])",
                         "instant": false,
-                        "legendFormat": "__auto",
+                        "legendFormat": "Failure",
                         "range": true
                       }
                     },
@@ -476,8 +454,8 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "increase(http_requests_total{endpoint=\"/api/postings\", method=\"POST\", status=\"201\"}[1h])",
-                        "legendFormat": "__auto",
+                        "expr": "increase(postings_created_total[1h])",
+                        "legendFormat": "New postings",
                         "range": true
                       }
                     },
@@ -561,8 +539,8 @@
                       },
                       "spec": {
                         "editorMode": "code",
-                        "expr": "rate(http_requests_total{endpoint=\"/api/applications\", method=\"POST\", status=\"201\"}[5m])",
-                        "legendFormat": "__auto",
+                        "expr": "rate(applications_submitted_total{result=\"success\"}[5m])",
+                        "legendFormat": "Applications",
                         "range": true
                       }
                     },
@@ -672,9 +650,17 @@
                   "spec": {
                     "query": {
                       "kind": "DataQuery",
-                      "group": "",
+                      "group": "prometheus",
                       "version": "v0",
-                      "spec": {}
+                      "datasource": {
+                        "name": "mimir"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "rate(http_requests_total{status=~\"401|403\"}[5m])",
+                        "legendFormat": "{{endpoint}}",
+                        "range": true
+                      }
                     },
                     "refId": "A",
                     "hidden": false

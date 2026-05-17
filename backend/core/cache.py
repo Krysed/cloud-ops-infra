@@ -8,5 +8,5 @@ def get_redis_client():
         host=REDIS_CONFIG["host"],
         port=REDIS_CONFIG["port"],
         password=REDIS_CONFIG.get("password"),
-        db=REDIS_CONFIG["db"]
+        db=REDIS_CONFIG["db"],
     )
