@@ -30,6 +30,7 @@ from core.db import (
 )
 from core.logger import logger
 from core.security import get_session_user, hash_password, login_user, logout_user
+from core.telemetry import record_application_submitted, record_login_attempt, record_posting_created, record_user_registration
 from core.utility import json_serializer
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
@@ -53,28 +54,33 @@ async def create_user_account(name: str = Form(...), surname: str = Form(...), u
         # Check if username and email are the same
         if username.lower() == email.lower():
             logger.info(f"Registration failed: Username and email cannot be the same - {username}")
+            record_user_registration("error")
             return RedirectResponse(url="/register.html?error=username_email_same", status_code=303)
-        
+
         # Check if email already exists
         if get_user_by_email(email):
             logger.info(f"Registration failed for {email}: Email already in use")
+            record_user_registration("error")
             return RedirectResponse(url="/register.html?error=email_taken", status_code=303)
-        
+
         # Check if username already exists
         if get_user_by_username(username):
             logger.info(f"Registration failed for {username}: Username already taken")
+            record_user_registration("error")
             return RedirectResponse(url="/register.html?error=username_taken", status_code=303)
-        
+
         user_id = create_user(name, surname, username, email, hashed_password=hash_password(password))
-        
+
         user_data = {"id": user_id, "name": name, "email": email}
         get_redis_client().set(f"user:{user_id}", json.dumps(user_data))
         logger.info(f"Account created successfully for user: {email}")
+        record_user_registration("success")
         return RedirectResponse(url="/login.html?success=account_created", status_code=303)
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Account creation failed for {email}: {str(e)}")
+        record_user_registration("error")
         return RedirectResponse(url="/register.html?error=server_error", status_code=303)
 
 @api_router.get("/users/{user_id}")
@@ -123,9 +129,10 @@ async def create_posting(
     
     if not session_data:
         return RedirectResponse(url="/login.html?error=auth_required", status_code=303)
-    
+
     user_id = session_data["user_id"]
     create_posting_in_db(title, post_description, category, user_id)
+    record_posting_created()
     return RedirectResponse(url="/my-postings.html?success=posting_created", status_code=303)
 
 @api_router.post("/postings/update")
@@ -184,7 +191,7 @@ async def get_posting_for_edit(posting_id: int, request: Request):
             "id": posting["id"],
             "title": posting["title"],
             "category": posting["category"],
-            "description": posting["description"],
+            "description": posting["description"],  # TODO: fix - DB column is post_description, causes KeyError 500
             "status": posting.get("status", "open")
         }
     })
@@ -300,13 +307,15 @@ async def apply(
         if not result["success"]:
             error_param = result["error"] if result["error"] else "application_failed"
             logger.warning(f"Application failed for posting {posting_id}, user {user_id}: {result['error']}")
+            record_application_submitted("failure")
             return RedirectResponse(url=f"/posting-detail.html?hash={posting_hash}&error={error_param}", status_code=303)
-        
+
         logger.info(f"Application successful for posting {posting_id}, user {user_id}")
+        record_application_submitted("success")
         return RedirectResponse(url=f"/posting-detail.html?hash={posting_hash}&success=application_submitted", status_code=303)
-        
+
     except Exception:
-        # Log the error and redirect with generic error
+        record_application_submitted("failure")
         return RedirectResponse(url="/my-postings.html?error=application_failed", status_code=303)
 
 @api_router.get("/applications/by_user/{user_id}")
@@ -591,23 +600,26 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
         result = login_user(email, password)
         if result is None:
             logger.info(f"Login failed for {email}: Invalid credentials")
+            record_login_attempt("failure")
             return RedirectResponse(url="/login.html?error=invalid_credentials", status_code=303)
-        
+
         response = RedirectResponse(url="/data-view.html", status_code=303)
         response.set_cookie(
             key="session_token",
             value=result["session_token"],
             httponly=True,
-            secure=False,  # Set to True in production with HTTPS
+            secure=False,
             samesite="lax",
-            max_age=604800  # 7 days
+            max_age=604800
         )
         logger.info(f"Login successful for {email}")
+        record_login_attempt("success")
         return response
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Login error for {email}: {str(e)}")
+        record_login_attempt("failure")
         return RedirectResponse(url="/login.html?error=server_error", status_code=303)
 
 @api_router.post("/logout")
