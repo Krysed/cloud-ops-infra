@@ -109,7 +109,7 @@ def configure_telemetry(app_name: str = "fastapi-backend"):
     All data goes to self-hosted LGTM stack - NO external services.
     """
 
-    tempo_endpoint = os.getenv("TEMPO_ENDPOINT", "http://tempo:4317")
+    tempo_endpoint = os.getenv("TEMPO_ENDPOINT", "tempo:4317")
     trace_provider = TracerProvider(
         resource=Resource.create(
             {
