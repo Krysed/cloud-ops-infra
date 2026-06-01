@@ -4,12 +4,12 @@
   "metadata": {
     "name": "backend-health",
     "namespace": "default",
-    "uid": "9bcb00ff-0aa0-481c-a4d4-41a053dd8594",
-    "resourceVersion": "1777217314149986",
-    "generation": 5,
-    "creationTimestamp": "2026-04-26T13:35:59Z",
+    "uid": "0b315fee-eedf-4b22-904f-46d1f10486da",
+    "resourceVersion": "1780316867783993",
+    "generation": 3,
+    "creationTimestamp": "2026-06-01T11:50:38Z",
     "labels": {
-      "grafana.app/deprecatedInternalID": "3761436421586944"
+      "grafana.app/deprecatedInternalID": "3270090516295680"
     },
     "annotations": {
       "grafana.app/createdBy": "access-policy:service",
@@ -17,12 +17,12 @@
       "grafana.app/managedBy": "classic-file-provisioning",
       "grafana.app/managerAllowsEdits": "true",
       "grafana.app/managerId": "default",
-      "grafana.app/saved-from-ui": "Grafana v13.0.1 (a100054f)",
-      "grafana.app/sourceChecksum": "a2b3dea2f06c9ad2c7f40478e83a8fbe",
+      "grafana.app/saved-from-ui": "Grafana v13.0.1+security-01 (9bbe672d)",
+      "grafana.app/sourceChecksum": "943d1281f248ccf538caa98719dc02c3",
       "grafana.app/sourcePath": "/etc/dashboards/backend_health.json",
-      "grafana.app/sourceTimestamp": "1755693049000",
-      "grafana.app/updatedBy": "user:afk9bmnczaccge",
-      "grafana.app/updatedTimestamp": "2026-04-26T15:28:34Z"
+      "grafana.app/sourceTimestamp": "1777713760000",
+      "grafana.app/updatedBy": "user:efntimxjbprswf",
+      "grafana.app/updatedTimestamp": "2026-06-01T12:27:47Z"
     }
   },
   "spec": {
@@ -113,7 +113,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "timeseries",
-            "version": "13.0.1",
+            "version": "13.0.1+security-01",
             "spec": {
               "options": {
                 "annotations": {
@@ -232,7 +232,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "stat",
-            "version": "13.0.1",
+            "version": "13.0.1+security-01",
             "spec": {
               "options": {
                 "colorMode": "value",
@@ -272,6 +272,89 @@
                   },
                   "color": {
                     "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-12": {
+        "kind": "Panel",
+        "spec": {
+          "id": 12,
+          "title": "All Traces",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "tempo",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "tempo"
+                      },
+                      "spec": {
+                        "limit": 20,
+                        "metricsQueryType": "range",
+                        "query": "{resource.service.name=\"fastapi-backend\" && name != \"GET /health\" && name != \"GET /api/metrics\"}",
+                        "queryType": "traceql",
+                        "serviceMapUseNativeHistograms": false,
+                        "tableType": "traces"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "13.0.1+security-01",
+            "spec": {
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
                   }
                 },
                 "overrides": []
@@ -321,7 +404,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "stat",
-            "version": "13.0.1",
+            "version": "13.0.1+security-01",
             "spec": {
               "options": {
                 "colorMode": "value",
@@ -454,7 +537,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "timeseries",
-            "version": "13.0.1",
+            "version": "13.0.1+security-01",
             "spec": {
               "options": {
                 "annotations": {
@@ -578,7 +661,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "timeseries",
-            "version": "13.0.1",
+            "version": "13.0.1+security-01",
             "spec": {
               "options": {
                 "annotations": {
@@ -697,7 +780,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "logs",
-            "version": "13.0.1",
+            "version": "13.0.1+security-01",
             "spec": {
               "options": {
                 "dedupStrategy": "none",
@@ -778,7 +861,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "stat",
-            "version": "13.0.1",
+            "version": "13.0.1+security-01",
             "spec": {
               "options": {
                 "colorMode": "value",
@@ -863,7 +946,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "timeseries",
-            "version": "13.0.1",
+            "version": "13.0.1+security-01",
             "spec": {
               "options": {
                 "annotations": {
@@ -984,7 +1067,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "table",
-            "version": "13.0.1",
+            "version": "13.0.1+security-01",
             "spec": {
               "options": {
                 "cellHeight": "sm",
@@ -1061,8 +1144,8 @@
             "spec": {
               "x": 0,
               "y": 8,
-              "width": 12,
-              "height": 8,
+              "width": 24,
+              "height": 9,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-2"
@@ -1073,7 +1156,7 @@
             "kind": "GridLayoutItem",
             "spec": {
               "x": 0,
-              "y": 16,
+              "y": 17,
               "width": 24,
               "height": 8,
               "element": {
@@ -1086,7 +1169,7 @@
             "kind": "GridLayoutItem",
             "spec": {
               "x": 0,
-              "y": 24,
+              "y": 25,
               "width": 24,
               "height": 9,
               "element": {
@@ -1099,7 +1182,7 @@
             "kind": "GridLayoutItem",
             "spec": {
               "x": 0,
-              "y": 33,
+              "y": 34,
               "width": 24,
               "height": 8,
               "element": {
@@ -1112,12 +1195,12 @@
             "kind": "GridLayoutItem",
             "spec": {
               "x": 0,
-              "y": 41,
+              "y": 42,
               "width": 12,
               "height": 8,
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-10"
+                "name": "panel-12"
               }
             }
           },
@@ -1125,7 +1208,7 @@
             "kind": "GridLayoutItem",
             "spec": {
               "x": 12,
-              "y": 41,
+              "y": 42,
               "width": 12,
               "height": 8,
               "element": {
@@ -1138,7 +1221,20 @@
             "kind": "GridLayoutItem",
             "spec": {
               "x": 0,
-              "y": 49,
+              "y": 50,
+              "width": 24,
+              "height": 8,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-10"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 58,
               "width": 24,
               "height": 10,
               "element": {
