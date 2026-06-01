@@ -218,7 +218,7 @@ def get_postings_by_user(user_id):
                 p.created_at,
                 p.updated_at,
                 p.status,
-                COUNT(DISTINCT a.id) as applications_count
+                COUNT(DISTINCT a.id) as application_count
             FROM postings p
             LEFT JOIN applications a ON p.id = a.posting_id
             WHERE p.user_id = %s
