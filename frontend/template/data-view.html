@@ -13,6 +13,17 @@
     <link href="/static/css/bootstrap.min.css" rel="stylesheet" />
     <link href="/static/css/bootstrap-icons.css" rel="stylesheet" />
     <link href="/static/css/tooplate-kool-form-pack.css" rel="stylesheet" />
+    <style>
+      /* Override hero-section constraints — this page scrolls freely */
+      .hero-section {
+        height: auto !important;
+        min-height: 100vh !important;
+        overflow: visible !important;
+        padding-top: 140px !important;
+        padding-bottom: 60px !important;
+        align-items: flex-start !important;
+      }
+    </style>
   </head>
 
   <body>
@@ -65,11 +76,11 @@
       </div>
 
       <!-- Data preview Section -->
-      <section class="hero-section d-flex justify-content-center align-items-center">
+      <section class="hero-section d-flex justify-content-center">
         <div class="container">
           <div class="row">
             <div class="col-lg-10 col-12 mx-auto">
-              <div class="bg-white p-4 rounded shadow-lg">
+              <div class="bg-white p-4 rounded shadow-lg postings-card">
                 <h2 class="text-center mb-4">Browse Job Postings</h2>
                 <p class="text-center text-muted mb-4">Find opportunities that match your interests. Click "View Details" to see full requirements and apply.</p>
                 <div class="mb-3">
@@ -98,6 +109,7 @@
                     </tr>
                   </tbody>
                 </table>
+                <div id="pagination-controls"></div>
               </div>
             </div>
           </div>
