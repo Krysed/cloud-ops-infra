@@ -1,4 +1,4 @@
-FROM nginx:1.28.0-alpine-slim
+FROM nginx:1.30.0-alpine-slim
 
 COPY conf.d/app.conf /etc/nginx/conf.d/default.conf
 
