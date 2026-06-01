@@ -1,3 +1,3 @@
-FROM grafana/mimir:latest
+FROM grafana/mimir:3.0.6
 
 COPY mimir.yaml /etc/mimir/mimir.yaml
