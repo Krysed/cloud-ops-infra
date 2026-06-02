@@ -93,15 +93,14 @@ resource "time_sleep" "wait_for_apis" {
 module "security" {
   source = "../../modules/security"
 
-  project_id     = var.project_id
-  project_number = var.project_number
-  gke_namespace  = "dev"
-
+  project_id             = var.project_id
+  project_number         = var.project_number
+  gke_namespace          = "dev"
   db_password            = var.db_password
   app_secret_key         = var.app_secret_key
   grafana_admin_password = var.grafana_admin_password
-
-  depends_on = [time_sleep.wait_for_apis]
+  github_repo            = var.github_repo
+  depends_on             = [time_sleep.wait_for_apis]
 }
 
 # ============================================================
