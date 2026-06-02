@@ -1,0 +1,120 @@
+name: publish_images
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+
+  publish:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      matrix:
+        include:
+          - service: backend
+            changed: ${{ needs.detect-changes.outputs.backend }}
+          - service: frontend
+            changed: ${{ needs.detect-changes.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        if: matrix.changed == 'true'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Configure Docker for Artifact Registry
+        if: matrix.changed == 'true'
+        run: |
+          REGISTRY_HOST=$(echo "${{ secrets.DOCKER_REGISTRY_URL }}" | cut -d'/' -f1)
+          gcloud auth configure-docker $REGISTRY_HOST --quiet
+
+      - name: Build image
+        if: matrix.changed == 'true'
+        run: |
+          docker build \
+            -t ${{ secrets.DOCKER_REGISTRY_URL }}/${{ matrix.service }}:${{ github.sha }} \
+            -t ${{ secrets.DOCKER_REGISTRY_URL }}/${{ matrix.service }}:latest \
+            ./${{ matrix.service }}
+
+      - name: Push image
+        if: matrix.changed == 'true'
+        run: |
+          docker push ${{ secrets.DOCKER_REGISTRY_URL }}/${{ matrix.service }}:${{ github.sha }}
+          docker push ${{ secrets.DOCKER_REGISTRY_URL }}/${{ matrix.service }}:latest
+
+  deploy:
+    needs: [detect-changes, publish]
+    if: needs.publish.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Check if GKE cluster exists
+        id: cluster_check
+        run: |
+          if gcloud container clusters describe ${{ secrets.GKE_CLUSTER_NAME }} \
+            --region ${{ secrets.GKE_CLUSTER_REGION }} \
+            --project ${{ secrets.GCP_PROJECT_ID }} \
+            --quiet 2>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get GKE credentials
+        if: steps.cluster_check.outputs.exists == 'true'
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
+          location: ${{ secrets.GKE_CLUSTER_REGION }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy backend
+        if: steps.cluster_check.outputs.exists == 'true' && needs.detect-changes.outputs.backend == 'true'
+        run: |
+          kubectl set image deployment/backend-deployment \
+            backend=${{ secrets.DOCKER_REGISTRY_URL }}/backend:${{ github.sha }} \
+            -n ${{ secrets.GKE_NAMESPACE }}
+          kubectl rollout status deployment/backend-deployment -n ${{ secrets.GKE_NAMESPACE }}
+
+      - name: Deploy frontend
+        if: steps.cluster_check.outputs.exists == 'true' && needs.detect-changes.outputs.frontend == 'true'
+        run: |
+          kubectl set image deployment/frontend-deployment \
+            frontend=${{ secrets.DOCKER_REGISTRY_URL }}/frontend:${{ github.sha }} \
+            -n ${{ secrets.GKE_NAMESPACE }}
+          kubectl rollout status deployment/frontend-deployment -n ${{ secrets.GKE_NAMESPACE }}
