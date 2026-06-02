@@ -112,13 +112,21 @@ jobs:
           location: ${{ secrets.GKE_CLUSTER_REGION }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
+      - name: Show k8s diff
+        if: steps.cluster_check.outputs.exists == 'true' && needs.detect-changes.outputs.k8s == 'true'
+        run: |
+          kubectl diff -f k8s/namespace.yaml \
+            -f k8s/ingress.yaml \
+            -f k8s/backend/ \
+            -f k8s/frontend/ || true
+
       - name: Apply k8s manifests
         if: steps.cluster_check.outputs.exists == 'true' && needs.detect-changes.outputs.k8s == 'true'
         run: |
           kubectl apply -f k8s/namespace.yaml
           kubectl apply -f k8s/backend/
           kubectl apply -f k8s/frontend/
-          kubectl apply -f k8s/nginx/
+          kubectl apply -f k8s/ingress.yaml
 
       - name: Deploy backend
         if: steps.cluster_check.outputs.exists == 'true' && needs.detect-changes.outputs.backend == 'true'
