@@ -18,8 +18,8 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: infra-frontend:latest
-        imagePullPolicy: Never  # For local minikube images
+        image: ${DOCKER_REGISTRY_URL}/frontend:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80  # nginx serves on port 80
         # Frontend is static files, no environment variables needed

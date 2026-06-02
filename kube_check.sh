@@ -32,6 +32,13 @@ log_ok()    { echo -e "${GREEN}${1}${NC}"; }
 log_step()  { echo -e "${YELLOW}${1}${NC}"; }
 log_error() { echo -e "${RED}${1}${NC}"; }
 
+if [[ -z "${DOCKER_REGISTRY_URL:-}" ]]; then
+    log_error "DOCKER_REGISTRY_URL is not set."
+    echo "  For local minikube:  export DOCKER_REGISTRY_URL=local"
+    echo "  For cloud registry:  export DOCKER_REGISTRY_URL=<registry-url>"
+    exit 1
+fi
+
 wait_for_resource() {
     local resource_type=$1
     local resource_name=$2
@@ -62,7 +69,11 @@ build_images() {
 
     for name in "${BUILD_IMAGES[@]}"; do
         log_step "Building ${name} image..."
-        docker build -t "infra-${name}:latest" "${PROJECT_ROOT}/${name}"
+        if [[ "${name}" == "backend" || "${name}" == "frontend" ]]; then
+            docker build -t "${DOCKER_REGISTRY_URL}/${name}:latest" "${PROJECT_ROOT}/${name}"
+        else
+            docker build -t "infra-${name}:latest" "${PROJECT_ROOT}/${name}"
+        fi
     done
 
     log_ok "All images built successfully"
@@ -100,7 +111,12 @@ deploy_resources() {
 
     for name in "${DEPLOYMENTS_PRE_PROMTAIL[@]}"; do
         log_step "   - ${name^} Deployment..."
-        kubectl apply -f "${K8S_DIR}/${name}/${name}-deployment.yaml"
+        if [[ "${name}" == "backend" || "${name}" == "frontend" ]]; then
+            # shellcheck disable=SC2016
+            envsubst '${DOCKER_REGISTRY_URL}' < "${K8S_DIR}/${name}/${name}-deployment.yaml" | kubectl apply -f -
+        else
+            kubectl apply -f "${K8S_DIR}/${name}/${name}-deployment.yaml"
+        fi
         wait_for_resource "deployment" "${name}-deployment"
     done
 
