@@ -63,7 +63,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `#### Terraform Plan 📋\n\`\`\`\n${truncated}\n\`\`\``
+              body: `#### Terraform Plan \n\`\`\`\n${truncated}\n\`\`\``
             });
 
       - name: Terraform Plan status
