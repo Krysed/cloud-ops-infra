@@ -397,6 +397,38 @@ resource "kubernetes_config_map" "dashboard_backend_health" {
   depends_on = [helm_release.kube_prometheus_stack]
 }
 
+resource "kubernetes_config_map" "dashboard_business_metrics" {
+  metadata {
+    name      = "dashboard-business-metrics"
+    namespace = kubernetes_namespace.monitoring.metadata[0].name
+    labels = {
+      grafana_dashboard = "1"
+    }
+  }
+
+  data = {
+    "business_metrics.json" = file("${local.dashboards_path}/business_metrics.json")
+  }
+
+  depends_on = [helm_release.kube_prometheus_stack]
+}
+
+resource "kubernetes_config_map" "dashboard_logs_overview" {
+  metadata {
+    name      = "dashboard-logs-overview"
+    namespace = kubernetes_namespace.monitoring.metadata[0].name
+    labels = {
+      grafana_dashboard = "1"
+    }
+  }
+
+  data = {
+    "logs_overview.json" = file("${local.dashboards_path}/logs_overview.json")
+  }
+
+  depends_on = [helm_release.kube_prometheus_stack]
+}
+
 resource "kubernetes_service" "mimir" {
   metadata {
     name      = "mimir"
