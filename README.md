@@ -53,7 +53,16 @@ And copy the output into the respective fields.
 
 ### Quick Start
 
-Once the required tools are installed and environment is configured properly you can run the following commands:  
+Once the required tools are installed and environment is configured properly you can run the following commands:
+
+Before deploying, set the `DOCKER_REGISTRY_URL` environment variable:
+```bash
+# Local minikube
+export DOCKER_REGISTRY_URL=local
+
+# Cloud (Artifact Registry)
+export DOCKER_REGISTRY_URL=<your-registry-url>
+```
 
 1. **Start Minikube**: `minikube start`
 2. **Deploy**: `./kube_check.sh deploy`

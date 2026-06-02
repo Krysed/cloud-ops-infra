@@ -18,8 +18,8 @@ spec:
     spec:
       containers:
       - name: backend
-        image: infra-backend:latest
-        imagePullPolicy: Never  # For local minikube images
+        image: ${DOCKER_REGISTRY_URL}/backend:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
         env:
