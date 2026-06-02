@@ -59,3 +59,18 @@ output "bucket_name" {
   value       = google_storage_bucket.terraform_state.name
   description = "GCS bucket name for Terraform state"
 }
+
+# ============================================================
+# Artifact Registry for Docker images
+# ============================================================
+resource "google_artifact_registry_repository" "docker_images" {
+  location      = var.region
+  repository_id = "infra-project-ms-docker-images"
+  format        = "DOCKER"
+  description   = "Docker images for the project like backend image"
+}
+
+output "docker_registry_url" {
+  value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.docker_images.repository_id}"
+  description = "Docker registry base URL"
+}
