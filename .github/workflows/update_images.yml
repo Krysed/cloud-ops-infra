@@ -1,4 +1,4 @@
-name: publish_images
+name: update_images
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/**'
       - 'frontend/**'
+      - 'k8s/**'
 
 jobs:
   detect-changes:
@@ -14,6 +15,7 @@ jobs:
     outputs:
       backend: ${{ steps.changes.outputs.backend }}
       frontend: ${{ steps.changes.outputs.frontend }}
+      k8s: ${{ steps.changes.outputs.k8s }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -24,6 +26,8 @@ jobs:
               - 'backend/**'
             frontend:
               - 'frontend/**'
+            k8s:
+              - 'k8s/**'
 
   publish:
     needs: detect-changes
@@ -71,12 +75,17 @@ jobs:
 
   deploy:
     needs: [detect-changes, publish]
-    if: needs.publish.result == 'success'
+    if: |
+      always() &&
+      needs.detect-changes.result == 'success' &&
+      (needs.publish.result == 'success' || needs.detect-changes.outputs.k8s == 'true')
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
     steps:
+      - uses: actions/checkout@v4
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -102,6 +111,10 @@ jobs:
           cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
           location: ${{ secrets.GKE_CLUSTER_REGION }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Apply k8s manifests
+        if: steps.cluster_check.outputs.exists == 'true' && needs.detect-changes.outputs.k8s == 'true'
+        run: kubectl apply -R -f k8s/
 
       - name: Deploy backend
         if: steps.cluster_check.outputs.exists == 'true' && needs.detect-changes.outputs.backend == 'true'
