@@ -78,6 +78,12 @@ resource "google_compute_firewall" "allow_internal" {
   ]
 }
 
+# Static IP for GKE Ingress load balancer
+resource "google_compute_global_address" "ingress_ip" {
+  name    = "${var.network_name}-ingress-ip"
+  project = var.project_id
+}
+
 # Firewall: allow GCP health check probes (required for LoadBalancers)
 resource "google_compute_firewall" "allow_health_checks" {
   name    = "${var.network_name}-allow-health-checks"
