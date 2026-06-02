@@ -1,0 +1,54 @@
+name: publish_images
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      matrix:
+        service: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for changes in ${{ matrix.service }}
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            service:
+              - '${{ matrix.service }}/**'
+
+      - name: Authenticate to Google Cloud
+        if: steps.changes.outputs.service == 'true'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Configure Docker for Artifact Registry
+        if: steps.changes.outputs.service == 'true'
+        run: gcloud auth configure-docker ${{ secrets.DOCKER_REGISTRY_URL }} --quiet
+
+      - name: Build image
+        if: steps.changes.outputs.service == 'true'
+        run: |
+          docker build \
+            -t ${{ secrets.DOCKER_REGISTRY_URL }}/${{ matrix.service }}:${{ github.sha }} \
+            -t ${{ secrets.DOCKER_REGISTRY_URL }}/${{ matrix.service }}:latest \
+            ./${{ matrix.service }}
+
+      - name: Push image
+        if: steps.changes.outputs.service == 'true'
+        run: |
+          docker push ${{ secrets.DOCKER_REGISTRY_URL }}/${{ matrix.service }}:${{ github.sha }}
+          docker push ${{ secrets.DOCKER_REGISTRY_URL }}/${{ matrix.service }}:latest
