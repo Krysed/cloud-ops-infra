@@ -1,6 +1,7 @@
+# Directories
 .venv/
 .vscode/
-.vagrant/
+.claude/
 .ruff_cache/
 .mypy_cache/
 .pytest_cache
@@ -10,9 +11,11 @@ frontend/static/images/
 frontend/static/videos/
 frontend/static/fonts/
 utility/
-*-secret.yaml
+
+# Specific files
 .env
 cookies.txt
+*-secret.yaml
 *.cookies
 
 # Terraform
