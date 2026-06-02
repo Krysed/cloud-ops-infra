@@ -15,9 +15,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.changes.outputs.python }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            python:
+              - 'backend/**'
+              - 'tests/**'
+              - 'requirements.txt'
+
   check_python:
     runs-on: ubuntu-latest
-    needs: secrets_check
+    needs: [secrets_check, detect-changes]
+    if: needs.detect-changes.outputs.python == 'true'
     container:
       image: python:alpine3.21
     steps:

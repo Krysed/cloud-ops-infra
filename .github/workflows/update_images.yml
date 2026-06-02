@@ -114,7 +114,11 @@ jobs:
 
       - name: Apply k8s manifests
         if: steps.cluster_check.outputs.exists == 'true' && needs.detect-changes.outputs.k8s == 'true'
-        run: kubectl apply -R -f k8s/
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/backend/
+          kubectl apply -f k8s/frontend/
+          kubectl apply -f k8s/nginx/
 
       - name: Deploy backend
         if: steps.cluster_check.outputs.exists == 'true' && needs.detect-changes.outputs.backend == 'true'

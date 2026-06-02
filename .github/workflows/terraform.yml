@@ -7,12 +7,14 @@ on:
     paths:
       - 'terraform/environments/**'
       - 'terraform/modules/**'
+      - 'grafana/dashboards/**'
   pull_request:
     branches:
       - master
     paths:
       - 'terraform/environments/**'
       - 'terraform/modules/**'
+      - 'grafana/dashboards/**'
 
 jobs:
   terraform:
