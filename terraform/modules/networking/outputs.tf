@@ -32,3 +32,8 @@ output "services_range_name" {
   description = "Secondary IP range name for GKE services"
   value       = var.services_range_name
 }
+
+output "ingress_ip" {
+  description = "Static IP address for GKE Ingress load balancer"
+  value       = google_compute_global_address.ingress_ip.address
+}
