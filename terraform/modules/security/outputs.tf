@@ -27,3 +27,8 @@ output "app_secret_key_secret_id" {
   description = "Secret Manager secret ID for application secret key"
   value       = google_secret_manager_secret.app_secret_key.secret_id
 }
+
+output "wif_provider" {
+  description = "Workload Identity Federation provider resource name"
+  value       = google_iam_workload_identity_pool_provider.github.name
+}
