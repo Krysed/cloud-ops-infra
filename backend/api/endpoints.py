@@ -238,9 +238,7 @@ async def get_posting_for_edit(posting_id: int, request: Request):
                 "id": posting["id"],
                 "title": posting["title"],
                 "category": posting["category"],
-                "description": posting[
-                    "description"
-                ],  # TODO: fix - DB column is post_description, causes KeyError 500
+                "description": posting["post_description"],
                 "status": posting.get("status", "open"),
             }
         }
