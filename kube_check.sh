@@ -98,6 +98,16 @@ deploy_resources() {
         kubectl apply -f "${K8S_DIR}/${svc}/${svc}-configmap.yaml"
     done
 
+    log_step "   - Creating backend-cloud-config (local service names)..."
+    kubectl create configmap backend-cloud-config \
+        --from-literal=POSTGRES_HOST=postgres-service \
+        --from-literal=POSTGRES_DB=app_db \
+        --from-literal=POSTGRES_USER=app_user \
+        --from-literal=REDIS_HOST=redis-service \
+        --from-literal=REDIS_PORT=6379 \
+        --namespace=dev \
+        --dry-run=client -o yaml | kubectl apply -f -
+
     log_step "4. Creating services..."
     for svc in "${SERVICES_WITH_K8S_SERVICE[@]}"; do
         kubectl apply -f "${K8S_DIR}/${svc}/${svc}-service.yaml"
