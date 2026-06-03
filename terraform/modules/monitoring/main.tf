@@ -316,12 +316,12 @@ resource "kubernetes_deployment" "mimir" {
 
           resources {
             requests = {
-              cpu    = "100m"
-              memory = "256Mi"
+              cpu    = "200m"
+              memory = "512Mi"
             }
             limits = {
-              cpu    = "500m"
-              memory = "512Mi"
+              cpu    = "1000m"
+              memory = "1Gi"
             }
           }
 
@@ -388,6 +388,10 @@ resource "kubernetes_config_map" "mimir_config" {
       server:
         http_listen_port: 9009
         grpc_listen_port: 9095
+
+      ingester:
+        ring:
+          replication_factor: 1
     EOT
   }
 }

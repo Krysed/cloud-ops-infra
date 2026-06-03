@@ -31,6 +31,12 @@ resource "google_project_iam_member" "gke_node_artifact_reader" {
   member  = "serviceAccount:${google_service_account.gke_node_sa.email}"
 }
 
+resource "google_project_iam_member" "gke_node_default_node_sa" {
+  project = var.project_id
+  role    = "roles/container.defaultNodeServiceAccount"
+  member  = "serviceAccount:${google_service_account.gke_node_sa.email}"
+}
+
 # ============================================================
 # Application Service Account (Workload Identity)
 # Allows pods in GKE to authenticate as this GCP SA
@@ -69,6 +75,43 @@ resource "google_service_account" "cicd_sa" {
 resource "google_project_iam_member" "cicd_container_developer" {
   project = var.project_id
   role    = "roles/container.developer"
+  member  = "serviceAccount:${google_service_account.cicd_sa.email}"
+}
+
+# Helm upgrades (e.g. kube-prometheus-stack) manage RBAC resources.
+# container.developer lacks RBAC permissions, so we add a minimal custom role.
+resource "google_project_iam_custom_role" "cicd_k8s_rbac" {
+  project     = var.project_id
+  role_id     = "cicdK8sRbac"
+  title       = "CI/CD Kubernetes RBAC Manager"
+  description = "Minimal RBAC permissions for Helm to manage Roles and ClusterRoles during upgrades"
+  permissions = [
+    "container.roles.create",
+    "container.roles.delete",
+    "container.roles.get",
+    "container.roles.list",
+    "container.roles.update",
+    "container.clusterRoles.create",
+    "container.clusterRoles.delete",
+    "container.clusterRoles.get",
+    "container.clusterRoles.list",
+    "container.clusterRoles.update",
+    "container.roleBindings.create",
+    "container.roleBindings.delete",
+    "container.roleBindings.get",
+    "container.roleBindings.list",
+    "container.roleBindings.update",
+    "container.clusterRoleBindings.create",
+    "container.clusterRoleBindings.delete",
+    "container.clusterRoleBindings.get",
+    "container.clusterRoleBindings.list",
+    "container.clusterRoleBindings.update",
+  ]
+}
+
+resource "google_project_iam_member" "cicd_k8s_rbac" {
+  project = var.project_id
+  role    = google_project_iam_custom_role.cicd_k8s_rbac.id
   member  = "serviceAccount:${google_service_account.cicd_sa.email}"
 }
 
