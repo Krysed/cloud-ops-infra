@@ -23,17 +23,15 @@ spec:
         ports:
         - containerPort: 8000
         env:
-        - name: POSTGRES_HOST
-          value: "postgres-service"
-        - name: REDIS_HOST  
-          value: "redis-service"
         - name: ENV
           value: "dev"
         envFrom:
-        - configMapRef:
-            name: backend-config
         - secretRef:
             name: backend-secret
+        - configMapRef:
+            name: backend-config
+        - configMapRef:
+            name: backend-cloud-config
         resources:
           requests:
             memory: "128Mi"

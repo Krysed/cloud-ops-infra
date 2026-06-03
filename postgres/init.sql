@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS postings (
     title TEXT NOT NULL,
     post_description TEXT NOT NULL,
     category TEXT NOT NULL,
+    hash TEXT UNIQUE,
     views INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP,
