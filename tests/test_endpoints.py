@@ -31,7 +31,7 @@ MOCK_POSTING = {
     "user_id": 1,
     "title": "Test Job",
     "category": "IT",
-    "description": "A test posting",
+    "post_description": "A test posting",
     "status": "open",
     "hash": "abc123",
     "created_at": None,
