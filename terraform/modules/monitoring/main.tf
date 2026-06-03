@@ -113,6 +113,12 @@ resource "helm_release" "kube_prometheus_stack" {
       alertmanager = {
         enabled = true
       }
+
+      prometheusOperator = {
+        admissionWebhooks = {
+          enabled = false
+        }
+      }
     })
   ]
 
