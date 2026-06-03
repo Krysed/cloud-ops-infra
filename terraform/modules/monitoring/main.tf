@@ -28,6 +28,9 @@ resource "helm_release" "kube_prometheus_stack" {
     yamlencode({
       grafana = {
         adminPassword = var.grafana_admin_password
+        image = {
+          tag = "13.0.1"
+        }
         persistence = {
           enabled          = true
           size             = var.storage_size_grafana
@@ -48,19 +51,19 @@ resource "helm_release" "kube_prometheus_stack" {
         # Pre-provision all datasources automatically
         additionalDataSources = [
           {
-            name   = "Loki"
+            name   = "loki"
             type   = "loki"
             url    = "http://loki.${var.namespace}.svc.cluster.local:3100"
             access = "proxy"
           },
           {
-            name   = "Tempo"
+            name   = "tempo"
             type   = "tempo"
-            url    = "http://tempo.${var.namespace}.svc.cluster.local:3200"
+            url    = "http://tempo.${var.namespace}.svc.cluster.local:3100"
             access = "proxy"
           },
           {
-            name   = "Mimir"
+            name   = "mimir"
             type   = "prometheus"
             url    = "http://mimir.${var.namespace}.svc.cluster.local:9009/prometheus"
             access = "proxy"
@@ -90,6 +93,18 @@ resource "helm_release" "kube_prometheus_stack" {
           remoteWrite = [
             {
               url = "http://mimir.${var.namespace}.svc.cluster.local:9009/api/v1/push"
+            }
+          ]
+
+          additionalScrapeConfigs = [
+            {
+              job_name = "fastapi-backend"
+              static_configs = [
+                {
+                  targets = ["backend.${var.namespace}.svc.cluster.local:8000"]
+                }
+              ]
+              metrics_path = "/metrics"
             }
           ]
         }
