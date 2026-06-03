@@ -181,7 +181,7 @@ module "compute" {
 module "monitoring" {
   source = "../../modules/monitoring"
 
-  namespace              = "monitoring"
+  namespace              = "dev"
   grafana_admin_password = var.grafana_admin_password
 
   # Reduced retention for dev
