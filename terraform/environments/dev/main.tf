@@ -207,6 +207,43 @@ module "monitoring" {
 # Identity Pool {project_id}.svc.id.goog is created by GKE
 # and only exists after module.compute completes.
 # ============================================================
+# ============================================================
+# Backend cloud config
+# Passes Cloud SQL and Redis IPs directly from Terraform outputs
+# into a Kubernetes ConfigMap — no manual secrets needed.
+# ============================================================
+resource "kubernetes_config_map" "backend_cloud_config" {
+  metadata {
+    name      = "backend-cloud-config"
+    namespace = "dev"
+  }
+
+  data = {
+    POSTGRES_HOST = module.data.db_private_ip
+    POSTGRES_DB   = module.data.db_name
+    POSTGRES_USER = module.data.db_user
+    REDIS_HOST    = module.data.redis_host
+    REDIS_PORT    = tostring(module.data.redis_port)
+  }
+
+  depends_on = [module.compute, module.data]
+}
+
+resource "kubernetes_secret" "backend_secret" {
+  metadata {
+    name      = "backend-secret"
+    namespace = "dev"
+  }
+
+  data = {
+    POSTGRES_PASSWORD = var.db_password
+    REDIS_PASSWORD    = ""
+    APP_SECRET_KEY    = var.app_secret_key
+  }
+
+  depends_on = [module.compute]
+}
+
 resource "google_service_account_iam_member" "workload_identity_binding" {
   service_account_id = module.security.app_sa_id
   role               = "roles/iam.workloadIdentityUser"
