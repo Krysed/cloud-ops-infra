@@ -605,7 +605,7 @@ def get_public_postings():
             FROM postings p
             JOIN users u ON p.user_id = u.id
             LEFT JOIN applications a ON p.id = a.posting_id
-            WHERE p.status = 'active'
+            WHERE p.status = 'open'
             GROUP BY p.id, p.user_id, u.name, u.username
             ORDER BY p.created_at DESC
         """)
