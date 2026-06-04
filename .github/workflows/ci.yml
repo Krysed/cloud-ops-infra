@@ -1,4 +1,4 @@
-name: complete_workflow
+name: ci_pipeline
 
 on:
   pull_request:
