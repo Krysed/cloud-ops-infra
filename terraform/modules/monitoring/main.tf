@@ -117,6 +117,12 @@ resource "helm_release" "kube_prometheus_stack" {
       prometheusOperator = {
         admissionWebhooks = {
           enabled = false
+          patch = {
+            enabled = false
+          }
+        }
+        tls = {
+          enabled = false
         }
       }
     })
