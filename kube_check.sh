@@ -101,8 +101,8 @@ deploy_resources() {
     log_step "   - Creating backend-cloud-config (local service names)..."
     kubectl create configmap backend-cloud-config \
         --from-literal=POSTGRES_HOST=postgres-service \
-        --from-literal=POSTGRES_DB=app_db \
-        --from-literal=POSTGRES_USER=app_user \
+        --from-literal=POSTGRES_DB=test_database \
+        --from-literal=POSTGRES_USER=krysed \
         --from-literal=REDIS_HOST=redis-service \
         --from-literal=REDIS_PORT=6379 \
         --namespace=dev \
