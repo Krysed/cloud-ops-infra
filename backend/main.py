@@ -1,8 +1,8 @@
-from api import endpoints
-from core.telemetry import configure_telemetry, instrument_app
-from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
+from api import endpoints
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+from fastapi import FastAPI, Response
+from core.telemetry import configure_telemetry, instrument_app
 
 app = FastAPI(title="FastAPI App", version="1.0.0")
 
