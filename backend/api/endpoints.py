@@ -1,4 +1,3 @@
-from fastapi import APIRouter, Form, HTTPException, Request
 import json
 from contextlib import suppress
 
@@ -38,6 +37,7 @@ from core.telemetry import (
     record_user_registration,
 )
 from core.utility import json_serializer
+from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
